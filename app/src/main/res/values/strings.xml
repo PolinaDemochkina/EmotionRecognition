@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">Emotion recognition</string>
+    <string name="get_started">get started</string>
+    <string name="emotion_recognition">Emotion recognition</string>
+    <string name="choose_a_video_from_your_gallery_and_our_neural_network_will_recognize_the_emotions">Choose a video from your gallery and our neural network will recognize the emotions.</string>
+    <string name="analyze">analyze</string>
+    <string name="analyzing">Analyzing …</string>
+    <string name="success">Success !</string>
+    <string name="back">back</string>
+</resources>
