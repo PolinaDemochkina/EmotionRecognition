@@ -1,8 +1,8 @@
 package com.example.emotionrecognition
 
-import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -12,18 +12,20 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.example.emotionrecognition.mtcnn.MTCNNModel
+import kotlinx.android.synthetic.main.activity_second.*
 import java.util.*
 
 class MainActivity : AppCompatActivity() {
     companion object {
         var image: Uri? = null
+        val TAG = "MainActivity"
+        var mtcnnFaceDetector: MTCNNModel? = null
+        val minFaceSize = 32
+        var sampledImage: Bitmap? = null
     }
 
-    private val TAG = "MainActivity"
     private val REQUEST_ACCESS_TYPE = 1
     private val REQUEST_CODE_ASK_MULTIPLE_PERMISSIONS = 124
-    private var mtcnnFaceDetector: MTCNNModel? = null
-    private val minFaceSize = 32
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -53,8 +55,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == Activity.RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
+        if (resultCode == RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
             image = data?.data
+            Log.d(TAG, "uri$image")
             val intentNextStep = Intent(this, SecondActivity::class.java)
             startActivity(intentNextStep)
         }

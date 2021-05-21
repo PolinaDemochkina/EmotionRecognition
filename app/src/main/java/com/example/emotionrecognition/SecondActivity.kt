@@ -2,20 +2,39 @@ package com.example.emotionrecognition
 
 import android.animation.ObjectAnimator
 import android.graphics.*
+import android.media.ExifInterface
+import android.net.Uri
+import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
+import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
+import com.example.emotionrecognition.mtcnn.Box
 import kotlinx.android.synthetic.main.activity_second.*
 import java.util.*
 
+
 class SecondActivity : AppCompatActivity() {
+    @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_second)
-        Photo.setImageURI(MainActivity.image)
+        MainActivity.sampledImage = getImage(MainActivity.image!!)
+        var resizedBitmap = MainActivity.sampledImage
+        val minSize = 600.0
+        val scale = Math.min(resizedBitmap!!.width, resizedBitmap!!.height) / minSize
+        if (scale > 1.0) {
+            resizedBitmap = Bitmap.createScaledBitmap(
+                MainActivity.sampledImage!!,
+                (MainActivity.sampledImage!!.width / scale).toInt(),
+                (MainActivity.sampledImage!!.height / scale).toInt(), false
+            )
+        }
+        if (resizedBitmap != null) Photo.setImageBitmap(resizedBitmap)
         ProgressBar.max = 100
     }
 
@@ -35,12 +54,52 @@ class SecondActivity : AppCompatActivity() {
             Download.visibility = View.VISIBLE
         }
         progress.start()
-
+        if (isImageLoaded()) {
+            mtcnnDetectionAndAttributesRecognition(null)
+        }
         mtcnnDetectionAndAttributesRecognition(null)
     }
 
+    private fun isImageLoaded(): Boolean {
+        if (MainActivity.sampledImage == null) Toast.makeText(
+            applicationContext,
+            "It is necessary to open image firstly",
+            Toast.LENGTH_SHORT
+        ).show()
+        return MainActivity.sampledImage != null
+    }
+    @RequiresApi(Build.VERSION_CODES.N)
+    private fun getImage(selectedImageUri: Uri): Bitmap? {
+        var bmp: Bitmap? = null
+        try {
+            var ims = contentResolver.openInputStream(selectedImageUri)
+            bmp = BitmapFactory.decodeStream(ims)
+            ims!!.close()
+            ims = contentResolver.openInputStream(selectedImageUri)
+            val exif = ExifInterface(ims!!) //selectedImageUri.getPath());
+            val orientation = exif.getAttributeInt(ExifInterface.TAG_ORIENTATION, 1)
+            var degreesForRotation = 0
+            when (orientation) {
+                ExifInterface.ORIENTATION_ROTATE_90 -> degreesForRotation = 90
+                ExifInterface.ORIENTATION_ROTATE_270 -> degreesForRotation = 270
+                ExifInterface.ORIENTATION_ROTATE_180 -> degreesForRotation = 180
+            }
+            if (degreesForRotation != 0) {
+                val matrix = Matrix()
+                matrix.setRotate(degreesForRotation.toFloat())
+                bmp = Bitmap.createBitmap(
+                    bmp!!, 0, 0, bmp.width,
+                    bmp.height, matrix, true
+                )
+            }
+        } catch (e: Exception) {
+            Log.e(MainActivity.TAG, "Exception thrown: " + e + " " + Log.getStackTraceString(e))
+        }
+        return bmp
+    }
+
     private fun mtcnnDetectionAndAttributesRecognition(classifier: TfLiteClassifier?) {
-        val bmp: Bitmap = sampledImage
+        val bmp = MainActivity.sampledImage!!
         var resizedBitmap = bmp
         val minSize = 600.0
         val scale = Math.min(bmp.width, bmp.height) / minSize
@@ -52,7 +111,7 @@ class SecondActivity : AppCompatActivity() {
             //bmp=resizedBitmap;
         }
         val startTime = SystemClock.uptimeMillis()
-        val bboxes: Vector<Box> = mtcnnFaceDetector.detectFaces(
+        val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
             resizedBitmap,
             MainActivity.minFaceSize
         ) //(int)(bmp.getWidth()*MIN_FACE_SIZE));
@@ -101,7 +160,7 @@ class SecondActivity : AppCompatActivity() {
                     classifier.imageSizeY,
                     false
                 )
-                val res: ClassifierResult = classifier.classifyFrame(resultBitmap)
+                val res: ClassifierResult? = classifier.classifyFrame(resultBitmap)
                 c.drawText(
                     res.toString(),
                     bbox.left.toFloat(),
@@ -111,7 +170,7 @@ class SecondActivity : AppCompatActivity() {
                 Log.i(MainActivity.TAG, res.toString())
             }
         }
-        imageView.setImageBitmap(tempBmp)
+        Photo.setImageBitmap(tempBmp)
     }
 
     fun back(view: View) {

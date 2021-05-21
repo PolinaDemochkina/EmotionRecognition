@@ -17,7 +17,7 @@ abstract class TfLiteClassifier(context: Context?, model_path: String?) {
 
     /* Preallocated buffers for storing image data in. */
     private var intValues: IntArray? = null
-    protected var imgData: ByteBuffer? = null
+    protected lateinit var imgData: ByteBuffer
 
     /** A ByteBuffer to hold image data, to be feed into Tensorflow Lite as inputs.  */
     var imageSizeX = 224
@@ -48,7 +48,7 @@ abstract class TfLiteClassifier(context: Context?, model_path: String?) {
         for (i in outputs.indices) {
             val ith_output = outputMap[i] as ByteBuffer?
             ith_output!!.rewind()
-            val len: Int = outputs[i][0].length
+            val len: Int = outputs[i][0]!!.size
             for (j in 0 until len) {
                 outputs[i][0]!![j] = ith_output.float
             }
