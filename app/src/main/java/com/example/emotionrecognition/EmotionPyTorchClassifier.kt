@@ -15,7 +15,7 @@ class EmotionPyTorchClassifier(context: Context) {
     companion object {
         /** Tag for the [Log].  */
         private const val TAG = "EmotionPyTorch"
-        private const val MODEL_FILE = "mobile_affectnet_vggface2_enet0.pt"
+        private const val MODEL_FILE = "mobile_efficientNet.pt"
         @Throws(IOException::class)
         fun assetFilePath(context: Context, assetName: String?): String {
             val file = File(context.filesDir, assetName)
@@ -94,6 +94,7 @@ class EmotionPyTorchClassifier(context: Context) {
             "Timecost to run PyTorch model inference: $timecostMs"
         )
         val scores = outputTensor.dataAsFloatArray
+        Log.d(MainActivity.TAG, scores.size.toString())
         return Pair(timecostMs, scores)
     }
 
