@@ -125,18 +125,18 @@ class SecondActivity : AppCompatActivity() {
         p.isAntiAlias = true
         p.isFilterBitmap = true
         p.isDither = true
-        p.color = Color.BLUE
+        p.color = Color.parseColor("#9FFFCB")
         p.strokeWidth = 5f
         val p_text = Paint()
         p_text.color = Color.WHITE
         p_text.style = Paint.Style.FILL
-        p_text.color = Color.BLUE
+        p_text.color = Color.parseColor("#9FFFCB")
         p_text.textSize = 24f
         c.drawBitmap(bmp, 0f, 0f, null)
         for (box in bboxes) {
             val bbox =
                 box.transform2Rect() //new android.graphics.Rect(Math.max(0,box.left()),Math.max(0,box.top()),box.right(),box.bottom());
-            p.color = Color.RED
+            p.color = Color.parseColor("#9FFFCB")
             c.drawRect(bbox, p)
             if (MainActivity.emotionClassifierPyTorch != null && bbox.width() > 0 && bbox.height() > 0) {
                 val bboxOrig = Rect(
