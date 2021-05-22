@@ -21,7 +21,7 @@ class MainActivity : AppCompatActivity() {
         val TAG = "MainActivity"
         var mtcnnFaceDetector: MTCNNModel? = null
         var emotionClassifierPyTorch: EmotionPyTorchClassifier? = null
-        var linearClassifier: LinearSVC? = null
+        var clf: LinearSVC? = null
         val minFaceSize = 32
         var sampledImage: Bitmap? = null
     }
@@ -141,7 +141,7 @@ class MainActivity : AppCompatActivity() {
         }
 
         try {
-            linearClassifier = LinearSVC(applicationContext)
+            clf = LinearSVC(applicationContext)
         } catch (e: java.lang.Exception) {
             Log.e(TAG, "Exception initializing classifier!", e)
         }

@@ -59,25 +59,9 @@ class EmotionPyTorchClassifier(context: Context) {
     fun recognize(bitmap: Bitmap): String {
         val res = classifyImage(bitmap)
         val scores = res.second
-
-        val index = arrayOfNulls<Int>(scores.size)
-        for (i in scores.indices) {
-            index[i] = i
-        }
-        Arrays.sort(
-            index
-        ) { idx1, idx2 -> java.lang.Float.compare(scores[idx2!!], scores[idx1!!]) }
-        val K = 3
-        val str = StringBuilder()
-        str.append("Timecost (ms):").append(java.lang.Long.toString(res.first))
-            .append("\nResult:\n")
-        for (i in 0 until K) {
-            str.append(
-                "${labels!![index[i]!!]} ${index[i].toString()} ${scores[index[i]!!]}"
-            )
-        }
-        Log.i(TAG, "PyTorch result: $str")
-        return labels!![index[0]!!]
+        val features = scores + scores + scores + scores
+        val index = MainActivity.clf?.predict(features)
+        return labels!![index!!]
     }
 
     private fun classifyImage(bitmap: Bitmap): Pair<Long, FloatArray> {
