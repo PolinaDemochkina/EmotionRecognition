@@ -55,9 +55,8 @@ class SecondActivity : AppCompatActivity() {
         }
         progress.start()
         if (isImageLoaded()) {
-            mtcnnDetectionAndAttributesRecognition(null)
+            mtcnnDetectionAndEmotionPyTorchRecognition()
         }
-        mtcnnDetectionAndAttributesRecognition(null)
     }
 
     private fun isImageLoaded(): Boolean {
@@ -98,8 +97,8 @@ class SecondActivity : AppCompatActivity() {
         return bmp
     }
 
-    private fun mtcnnDetectionAndAttributesRecognition(classifier: TfLiteClassifier?) {
-        val bmp = MainActivity.sampledImage!!
+    private fun mtcnnDetectionAndEmotionPyTorchRecognition() {
+        var bmp: Bitmap = MainActivity.sampledImage!!
         var resizedBitmap = bmp
         val minSize = 600.0
         val scale = Math.min(bmp.width, bmp.height) / minSize
@@ -108,7 +107,7 @@ class SecondActivity : AppCompatActivity() {
                 bmp,
                 (bmp.width / scale).toInt(), (bmp.height / scale).toInt(), false
             )
-            //bmp=resizedBitmap;
+            bmp = resizedBitmap
         }
         val startTime = SystemClock.uptimeMillis()
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
@@ -119,8 +118,7 @@ class SecondActivity : AppCompatActivity() {
             MainActivity.TAG,
             "Timecost to run mtcnn: " + java.lang.Long.toString(SystemClock.uptimeMillis() - startTime)
         )
-        val tempBmp =
-            Bitmap.createBitmap(resizedBitmap.width, resizedBitmap.height, Bitmap.Config.ARGB_8888)
+        val tempBmp = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
         val c = Canvas(tempBmp)
         val p = Paint()
         p.style = Paint.Style.STROKE
@@ -134,13 +132,13 @@ class SecondActivity : AppCompatActivity() {
         p_text.style = Paint.Style.FILL
         p_text.color = Color.BLUE
         p_text.textSize = 24f
-        c.drawBitmap(resizedBitmap, 0f, 0f, null)
+        c.drawBitmap(bmp, 0f, 0f, null)
         for (box in bboxes) {
-            p.color = Color.RED
-            val bbox: Rect =
+            val bbox =
                 box.transform2Rect() //new android.graphics.Rect(Math.max(0,box.left()),Math.max(0,box.top()),box.right(),box.bottom());
+            p.color = Color.RED
             c.drawRect(bbox, p)
-            if (classifier != null && bbox.width() > 0 && bbox.height() > 0) {
+            if (MainActivity.emotionClassifierPyTorch != null && bbox.width() > 0 && bbox.height() > 0) {
                 val bboxOrig = Rect(
                     bbox.left * bmp.width / resizedBitmap.width,
                     bmp.height * bbox.top / resizedBitmap.height,
@@ -154,20 +152,9 @@ class SecondActivity : AppCompatActivity() {
                     bboxOrig.width(),
                     bboxOrig.height()
                 )
-                val resultBitmap = Bitmap.createScaledBitmap(
-                    faceBitmap,
-                    classifier.imageSizeX,
-                    classifier.imageSizeY,
-                    false
-                )
-                val res: ClassifierResult? = classifier.classifyFrame(resultBitmap)
-                c.drawText(
-                    res.toString(),
-                    bbox.left.toFloat(),
-                    Math.max(0, bbox.top - 20).toFloat(),
-                    p_text
-                )
-                Log.i(MainActivity.TAG, res.toString())
+                val res: String = MainActivity.emotionClassifierPyTorch!!.recognize(faceBitmap)
+                c.drawText(res, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
+                Log.i(MainActivity.TAG, res)
             }
         }
         Photo.setImageBitmap(tempBmp)
