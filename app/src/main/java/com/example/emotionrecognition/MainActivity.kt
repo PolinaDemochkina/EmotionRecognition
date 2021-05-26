@@ -2,7 +2,6 @@ package com.example.emotionrecognition
 
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -17,13 +16,12 @@ import java.util.*
 
 class MainActivity : AppCompatActivity() {
     companion object {
-        var image: Uri? = null
+        var content: Uri? = null
         val TAG = "MainActivity"
         var mtcnnFaceDetector: MTCNNModel? = null
         var emotionClassifierPyTorch: EmotionPyTorchClassifier? = null
         var clf: LinearSVC? = null
         val minFaceSize = 32
-        var sampledImage: Bitmap? = null
     }
 
     private val REQUEST_ACCESS_TYPE = 1
@@ -50,16 +48,17 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun selectImageInAlbum() {
-        val intent = Intent(Intent.ACTION_GET_CONTENT)
-        intent.type = "image/*"
+        val intent = Intent()
+        intent.type = "image/* video/*"
+        intent.action = Intent.ACTION_PICK
         startActivityForResult(intent, REQUEST_ACCESS_TYPE)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
-            image = data?.data
-            Log.d(TAG, "uri$image")
+            content = data?.data
+            Log.d(TAG, "uri $content")
             val intentNextStep = Intent(this, SecondActivity::class.java)
             startActivity(intentNextStep)
         }

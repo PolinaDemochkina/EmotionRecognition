@@ -1,43 +1,105 @@
 package com.example.emotionrecognition
 
 import android.animation.ObjectAnimator
+import android.annotation.SuppressLint
+import android.content.ContentResolver
 import android.graphics.*
 import android.media.ExifInterface
+import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
+import android.util.Pair
 import android.view.View
-import android.widget.Toast
+import android.widget.TextView
+import android.widget.VideoView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
 import com.example.emotionrecognition.mtcnn.Box
 import kotlinx.android.synthetic.main.activity_second.*
+import org.pytorch.IValue
+import org.pytorch.Tensor
+import org.pytorch.torchvision.TensorImageUtils
 import java.util.*
 
 
 class SecondActivity : AppCompatActivity() {
+    private var mThread: Thread? = null
+    private var mVideoView: VideoView? = null
+    private var mStopThread = false
+    private val mResults: List<String> = ArrayList()
+    private var mTextView: TextView? = null
+
+    @SuppressLint("WrongThread")
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_second)
-        MainActivity.sampledImage = getImage(MainActivity.image!!)
-        var resizedBitmap = MainActivity.sampledImage
-        val minSize = 600.0
-        val scale = Math.min(resizedBitmap!!.width, resizedBitmap!!.height) / minSize
-        if (scale > 1.0) {
-            resizedBitmap = Bitmap.createScaledBitmap(
-                MainActivity.sampledImage!!,
-                (MainActivity.sampledImage!!.width / scale).toInt(),
-                (MainActivity.sampledImage!!.height / scale).toInt(), false
-            )
+        mVideoView = findViewById(R.id.videoView)
+//        mTextView = findViewById(R.id.textView)
+//        mTextView.setVisibility(View.INVISIBLE)
+
+        val cR: ContentResolver = this.applicationContext.contentResolver
+        val type = cR.getType(MainActivity.content!!)
+        if (type == "image/jpeg") {
+            val resizedBitmap = resize(getImage(MainActivity.content!!))
+            if (resizedBitmap != null) Photo.setImageBitmap(resizedBitmap)
+            ProgressBar.max = 100
+        } else if (type == "video/mp4") {
+            startVideo()
+//            val mmr = FFmpegMediaMetadataRetriever()
+//            mmr.setDataSource(this.applicationContext, MainActivity.content)
+//            val duration: Long = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION).toLong()
+//            val frameRate: Double = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_FRAMERATE).toDouble()
+//            val sec: Long = (1000 * 1000 / (frameRate)).roundToLong() // От этого!!!
+//            val bitmaps: ArrayList<Bitmap> = arrayListOf()
+//
+//            for (i in 0..duration * 1000 step sec) {
+//                val bitmap: Bitmap?  = mmr.getFrameAtTime(i, FFmpegMediaMetadataRetriever.OPTION_CLOSEST)
+//                try {
+//                    if (bitmap != null) {
+//                        bitmaps.add(resize(bitmap)!!)
+//                    }
+//                } catch (e : java.lang.Exception) {
+//                    e.printStackTrace();
+//                }
+//            }
         }
-        if (resizedBitmap != null) Photo.setImageBitmap(resizedBitmap)
-        ProgressBar.max = 100
     }
 
+    private fun startVideo() {
+        mVideoView?.setVideoURI(MainActivity.content)
+        mVideoView?.start()
+        if (mThread != null && mThread!!.isAlive()) {
+            try {
+                mThread!!.join()
+            } catch (e: InterruptedException) {
+                Log.e(MainActivity.TAG, e.localizedMessage)
+            }
+        }
+//        mStopThread = false
+//        mThread = Thread(this@SecondActivity)
+//        mThread?.start()
+    }
+
+    private fun resize(frame: Bitmap?): Bitmap? {
+        var resizedBitmap = frame
+        val minSize = 600.0
+        val scale = Math.min(resizedBitmap!!.width, resizedBitmap.height) / minSize
+        if (scale > 1.0) {
+            resizedBitmap = Bitmap.createScaledBitmap(
+                frame!!,
+                (frame.width / scale).toInt(),
+                (frame.height / scale).toInt(), false
+            )
+        }
+        return resizedBitmap
+    }
+
+    @RequiresApi(Build.VERSION_CODES.N)
     fun analyze(view: View) {
         Analyze.visibility = View.GONE
         AnalyzeText.visibility = View.VISIBLE
@@ -51,22 +113,11 @@ class SecondActivity : AppCompatActivity() {
             Success.visibility = View.VISIBLE
             TopPanel.visibility = View.VISIBLE
             Back.visibility = View.VISIBLE
-            Download.visibility = View.VISIBLE
         }
         progress.start()
-        if (isImageLoaded()) {
-            mtcnnDetectionAndEmotionPyTorchRecognition()
-        }
+        mtcnnDetectionAndEmotionPyTorchRecognition()
     }
 
-    private fun isImageLoaded(): Boolean {
-        if (MainActivity.sampledImage == null) Toast.makeText(
-            applicationContext,
-            "It is necessary to open image firstly",
-            Toast.LENGTH_SHORT
-        ).show()
-        return MainActivity.sampledImage != null
-    }
     @RequiresApi(Build.VERSION_CODES.N)
     private fun getImage(selectedImageUri: Uri): Bitmap? {
         var bmp: Bitmap? = null
@@ -97,28 +148,19 @@ class SecondActivity : AppCompatActivity() {
         return bmp
     }
 
+    @RequiresApi(Build.VERSION_CODES.N)
     private fun mtcnnDetectionAndEmotionPyTorchRecognition() {
-        var bmp: Bitmap = MainActivity.sampledImage!!
-        var resizedBitmap = bmp
-        val minSize = 600.0
-        val scale = Math.min(bmp.width, bmp.height) / minSize
-        if (scale > 1.0) {
-            resizedBitmap = Bitmap.createScaledBitmap(
-                bmp,
-                (bmp.width / scale).toInt(), (bmp.height / scale).toInt(), false
-            )
-            bmp = resizedBitmap
-        }
+        val resizedBitmap: Bitmap? = resize(getImage(MainActivity.content!!))
         val startTime = SystemClock.uptimeMillis()
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
-            resizedBitmap,
+            resizedBitmap!!,
             MainActivity.minFaceSize
         ) //(int)(bmp.getWidth()*MIN_FACE_SIZE));
         Log.i(
             MainActivity.TAG,
             "Timecost to run mtcnn: " + java.lang.Long.toString(SystemClock.uptimeMillis() - startTime)
         )
-        val tempBmp = Bitmap.createBitmap(bmp.width, bmp.height, Bitmap.Config.ARGB_8888)
+        val tempBmp = Bitmap.createBitmap(resizedBitmap.width, resizedBitmap.height, Bitmap.Config.ARGB_8888)
         val c = Canvas(tempBmp)
         val p = Paint()
         p.style = Paint.Style.STROKE
@@ -132,7 +174,7 @@ class SecondActivity : AppCompatActivity() {
         p_text.style = Paint.Style.FILL
         p_text.color = Color.parseColor("#9FFFCB")
         p_text.textSize = 24f
-        c.drawBitmap(bmp, 0f, 0f, null)
+        c.drawBitmap(resizedBitmap, 0f, 0f, null)
         for (box in bboxes) {
             val bbox =
                 box.transform2Rect() //new android.graphics.Rect(Math.max(0,box.left()),Math.max(0,box.top()),box.right(),box.bottom());
@@ -140,13 +182,13 @@ class SecondActivity : AppCompatActivity() {
             c.drawRect(bbox, p)
             if (MainActivity.emotionClassifierPyTorch != null && bbox.width() > 0 && bbox.height() > 0) {
                 val bboxOrig = Rect(
-                    bbox.left * bmp.width / resizedBitmap.width,
-                    bmp.height * bbox.top / resizedBitmap.height,
-                    bmp.width * bbox.right / resizedBitmap.width,
-                    bmp.height * bbox.bottom / resizedBitmap.height
+                    bbox.left * resizedBitmap.width / resizedBitmap.width,
+                    resizedBitmap.height * bbox.top / resizedBitmap.height,
+                    resizedBitmap.width * bbox.right / resizedBitmap.width,
+                    resizedBitmap.height * bbox.bottom / resizedBitmap.height
                 )
                 val faceBitmap = Bitmap.createBitmap(
-                    bmp,
+                    resizedBitmap,
                     bboxOrig.left,
                     bboxOrig.top,
                     bboxOrig.width(),

@@ -11,6 +11,7 @@ import org.pytorch.torchvision.TensorImageUtils
 import java.io.*
 import java.util.*
 
+
 class EmotionPyTorchClassifier(context: Context) {
     companion object {
         /** Tag for the [Log].  */
@@ -59,8 +60,8 @@ class EmotionPyTorchClassifier(context: Context) {
     fun recognize(bitmap: Bitmap): String {
         val res = classifyImage(bitmap)
         val scores = res.second
-        val features = scores + scores + scores + scores
-        val index = MainActivity.clf?.predict(features)
+        val descriptor = scores + scores + scores + scores
+        val index = MainActivity.clf?.predict(descriptor)
         return labels!![index!!]
     }
 
@@ -82,6 +83,8 @@ class EmotionPyTorchClassifier(context: Context) {
         Log.d(MainActivity.TAG, scores.size.toString())
         return Pair(timecostMs, scores)
     }
+
+
 
     init {
         module = Module.load(assetFilePath(context, MODEL_FILE))

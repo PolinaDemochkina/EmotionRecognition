@@ -81,7 +81,6 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
 
  //Non-Maximum Suppression
      private fun nms(boxes: Vector<Box>, threshold: Float, method: String) {
-         val cnt = 0
          for (i in boxes.indices) {
              val box = boxes[i]
              if (!box.deleted) {
