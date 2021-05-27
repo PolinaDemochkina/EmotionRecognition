@@ -15,7 +15,7 @@ import java.util.*
 class EmotionPyTorchClassifier(context: Context) {
     companion object {
         /** Tag for the [Log].  */
-        private const val TAG = "EmotionPyTorch"
+        private const val TAG = "Image detection"
         private const val MODEL_FILE = "mobile_efficientNet.pt"
         @Throws(IOException::class)
         fun assetFilePath(context: Context, assetName: String?): String {
@@ -83,8 +83,6 @@ class EmotionPyTorchClassifier(context: Context) {
         Log.d(MainActivity.TAG, scores.size.toString())
         return Pair(timecostMs, scores)
     }
-
-
 
     init {
         module = Module.load(assetFilePath(context, MODEL_FILE))

@@ -39,7 +39,8 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
          return Bitmap.createBitmap(
                  bm, 0, 0, width, height, matrix, true)
     }
-    fun normalizeImage(bitmap: Bitmap): FloatArray {
+
+    private fun normalizeImage(bitmap: Bitmap): FloatArray {
         val w = bitmap.width
         val h = bitmap.height
         val floatValues = FloatArray(w * h * 3)

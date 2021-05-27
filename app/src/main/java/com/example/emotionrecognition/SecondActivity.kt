@@ -1,6 +1,5 @@
 package com.example.emotionrecognition
 
-import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.graphics.*
@@ -11,111 +10,77 @@ import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
-import android.util.Pair
 import android.view.View
-import android.widget.TextView
-import android.widget.VideoView
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.animation.doOnEnd
 import com.example.emotionrecognition.mtcnn.Box
 import kotlinx.android.synthetic.main.activity_second.*
-import org.pytorch.IValue
-import org.pytorch.Tensor
-import org.pytorch.torchvision.TensorImageUtils
 import java.util.*
+import kotlin.math.ceil
 
+class SecondActivity : Runnable, AppCompatActivity() {
+    companion object {
+        fun resize(frame: Bitmap?): Bitmap? {
+            var resizedBitmap = frame
+            val minSize = 600.0
+            val scale = Math.min(resizedBitmap!!.width, resizedBitmap.height) / minSize
+            if (scale > 1.0) {
+                resizedBitmap = Bitmap.createScaledBitmap(
+                    frame!!,
+                    (frame.width / scale).toInt(),
+                    (frame.height / scale).toInt(), false
+                )
+            }
+            return resizedBitmap
+        }
+    }
 
-class SecondActivity : AppCompatActivity() {
-    private var mThread: Thread? = null
-    private var mVideoView: VideoView? = null
-    private var mStopThread = false
-    private val mResults: List<String> = ArrayList()
-    private var mTextView: TextView? = null
+    private var mThread: Thread? = Thread(this)
+    private var mStopThread = true
+    private val mResults: ArrayList<String> = arrayListOf()
+    private var isImage: Boolean = false
 
     @SuppressLint("WrongThread")
     @RequiresApi(Build.VERSION_CODES.N)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_second)
-        mVideoView = findViewById(R.id.videoView)
-//        mTextView = findViewById(R.id.textView)
-//        mTextView.setVisibility(View.INVISIBLE)
 
         val cR: ContentResolver = this.applicationContext.contentResolver
         val type = cR.getType(MainActivity.content!!)
         if (type == "image/jpeg") {
+            isImage = true
             val resizedBitmap = resize(getImage(MainActivity.content!!))
             if (resizedBitmap != null) Photo.setImageBitmap(resizedBitmap)
-            ProgressBar.max = 100
         } else if (type == "video/mp4") {
+            isImage = false
             startVideo()
-//            val mmr = FFmpegMediaMetadataRetriever()
-//            mmr.setDataSource(this.applicationContext, MainActivity.content)
-//            val duration: Long = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_DURATION).toLong()
-//            val frameRate: Double = mmr.extractMetadata(FFmpegMediaMetadataRetriever.METADATA_KEY_FRAMERATE).toDouble()
-//            val sec: Long = (1000 * 1000 / (frameRate)).roundToLong() // От этого!!!
-//            val bitmaps: ArrayList<Bitmap> = arrayListOf()
-//
-//            for (i in 0..duration * 1000 step sec) {
-//                val bitmap: Bitmap?  = mmr.getFrameAtTime(i, FFmpegMediaMetadataRetriever.OPTION_CLOSEST)
-//                try {
-//                    if (bitmap != null) {
-//                        bitmaps.add(resize(bitmap)!!)
-//                    }
-//                } catch (e : java.lang.Exception) {
-//                    e.printStackTrace();
-//                }
-//            }
         }
     }
 
     private fun startVideo() {
-        mVideoView?.setVideoURI(MainActivity.content)
-        mVideoView?.start()
-        if (mThread != null && mThread!!.isAlive()) {
+        video?.setVideoURI(MainActivity.content)
+        video?.setZOrderOnTop(true)
+        //video?.start()
+        if (mThread != null && mThread!!.isAlive) {
             try {
                 mThread!!.join()
             } catch (e: InterruptedException) {
                 Log.e(MainActivity.TAG, e.localizedMessage)
             }
         }
-//        mStopThread = false
-//        mThread = Thread(this@SecondActivity)
-//        mThread?.start()
-    }
-
-    private fun resize(frame: Bitmap?): Bitmap? {
-        var resizedBitmap = frame
-        val minSize = 600.0
-        val scale = Math.min(resizedBitmap!!.width, resizedBitmap.height) / minSize
-        if (scale > 1.0) {
-            resizedBitmap = Bitmap.createScaledBitmap(
-                frame!!,
-                (frame.width / scale).toInt(),
-                (frame.height / scale).toInt(), false
-            )
-        }
-        return resizedBitmap
+        mStopThread = false
+        mThread?.start()
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
     fun analyze(view: View) {
         Analyze.visibility = View.GONE
-        AnalyzeText.visibility = View.VISIBLE
-        ProgressBar.visibility = View.VISIBLE
-
-        val progress = ObjectAnimator.ofInt(ProgressBar, "progress", 100)
-        progress.setDuration(3000)
-        progress.doOnEnd {
-            AnalyzeText.visibility = View.INVISIBLE
-            ProgressBar.visibility = View.INVISIBLE
-            Success.visibility = View.VISIBLE
-            TopPanel.visibility = View.VISIBLE
-            Back.visibility = View.VISIBLE
-        }
-        progress.start()
-        mtcnnDetectionAndEmotionPyTorchRecognition()
+        video.start()
+        if (isImage)
+            imageRecognition()
+        else
+            Log.d(MainActivity.TAG, "OK")
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
@@ -149,7 +114,7 @@ class SecondActivity : AppCompatActivity() {
     }
 
     @RequiresApi(Build.VERSION_CODES.N)
-    private fun mtcnnDetectionAndEmotionPyTorchRecognition() {
+    private fun imageRecognition() {
         val resizedBitmap: Bitmap? = resize(getImage(MainActivity.content!!))
         val startTime = SystemClock.uptimeMillis()
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
@@ -158,7 +123,7 @@ class SecondActivity : AppCompatActivity() {
         ) //(int)(bmp.getWidth()*MIN_FACE_SIZE));
         Log.i(
             MainActivity.TAG,
-            "Timecost to run mtcnn: " + java.lang.Long.toString(SystemClock.uptimeMillis() - startTime)
+            "Timecost to run mtcnn: " + (SystemClock.uptimeMillis() - startTime).toString()
         )
         val tempBmp = Bitmap.createBitmap(resizedBitmap.width, resizedBitmap.height, Bitmap.Config.ARGB_8888)
         val c = Canvas(tempBmp)
@@ -180,7 +145,7 @@ class SecondActivity : AppCompatActivity() {
                 box.transform2Rect() //new android.graphics.Rect(Math.max(0,box.left()),Math.max(0,box.top()),box.right(),box.bottom());
             p.color = Color.parseColor("#9FFFCB")
             c.drawRect(bbox, p)
-            if (MainActivity.emotionClassifierPyTorch != null && bbox.width() > 0 && bbox.height() > 0) {
+            if (MainActivity.imageDetector != null && bbox.width() > 0 && bbox.height() > 0) {
                 val bboxOrig = Rect(
                     bbox.left * resizedBitmap.width / resizedBitmap.width,
                     resizedBitmap.height * bbox.top / resizedBitmap.height,
@@ -194,12 +159,69 @@ class SecondActivity : AppCompatActivity() {
                     bboxOrig.width(),
                     bboxOrig.height()
                 )
-                val res: String = MainActivity.emotionClassifierPyTorch!!.recognize(faceBitmap)
+                val res: String = MainActivity.imageDetector!!.recognize(faceBitmap)
                 c.drawText(res, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
                 Log.i(MainActivity.TAG, res)
             }
         }
         Photo.setImageBitmap(tempBmp)
+    }
+
+    private fun stopVideo() {
+        video.stopPlayback()
+        mStopThread = true
+    }
+
+    override fun onPause() {
+        super.onPause()
+        video.pause()
+    }
+
+    override fun onStop() {
+        super.onStop()
+        stopVideo()
+    }
+
+    override fun run() {   // video recognition
+        val mmr = MediaMetadataRetriever()
+        mmr.setDataSource(this.applicationContext, MainActivity.content)
+        val stringDuration = mmr.extractMetadata(MediaMetadataRetriever.METADATA_KEY_DURATION)
+        val durationMs = stringDuration!!.toDouble()
+
+        // for each second of the video, make inference to get the class label
+        val durationTo = ceil(durationMs / 1000).toInt()
+        mResults.clear()
+        var i = 0
+        while (!mStopThread && i < durationTo) {
+            val from = i * 1000
+            var to = (i + 1) * 1000
+            if (i == durationTo - 1) to = ceil(durationMs).toInt() - i * 1000
+            val result: String = MainActivity.videoDetector!!.recognize(from, to, mmr)
+            Log.e(MainActivity.TAG, result)
+
+            if (i * 1000 > video.currentPosition) {
+                try {
+                    Thread.sleep((i * 1000 - video!!.currentPosition).toLong())
+                } catch (e: InterruptedException) {
+                    Log.e(MainActivity.TAG, "Thread sleep exception: " + e.localizedMessage)
+                }
+            }
+            while (!video!!.isPlaying) {
+                if (mStopThread || video!!.currentPosition >= video!!.duration) break
+                try {
+                    Thread.sleep(100)
+                } catch (e: InterruptedException) {
+                    Log.e(MainActivity.TAG, "Thread sleep exception: " + e.localizedMessage)
+                }
+            }
+
+            runOnUiThread {
+                detectionResult.visibility = View.VISIBLE
+                detectionResult?.text = String.format(result)
+            }
+            mResults.add(result)
+            i++
+        }
     }
 
     fun back(view: View) {
