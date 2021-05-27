@@ -73,12 +73,14 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                   toMs: Int,
                   mmr: MediaMetadataRetriever): String {
         val length = 1280
-        val res = classifyVideo(fromMs, toMs, mmr)
-        val scores = res.second
-        val features = mk.ndarray(mk[scores.sliceArray(0 until length).toList(),
-                scores.sliceArray(length until length*2).toList(),
-                scores.sliceArray(length*2 until length*3).toList(),
-                scores.sliceArray(length*3 until length*4).toList()])
+        val res = classifyVideo(fromMs, toMs, mmr).second
+        val scores = mutableListOf<Float>()
+        for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE){
+            if ((i+1)*length <= res.size) {
+                scores.addAll(res.sliceArray(length*i until length*(i+1)).toList())
+            }
+        }
+        val features = mk.ndarray(mk[scores])
         val min = minD2(features, axis = 0).toList()
         val max = maxD2(features, axis = 0).toList()
         val mean: List<Float> = meanD2(features, axis = 0).toList().map { it.toFloat() }
