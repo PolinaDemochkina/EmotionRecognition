@@ -59,7 +59,7 @@ class EmotionPyTorchClassifier(context: Context) {
 
     fun recognize(bitmap: Bitmap): String {
         val res = classifyImage(bitmap)
-        val scores = res.second
+        val scores = res.second.toList()
         val descriptor = scores + scores + scores + scores
         val index = MainActivity.clf?.predict(descriptor)
         return labels!![index!!]

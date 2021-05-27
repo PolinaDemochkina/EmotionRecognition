@@ -14,6 +14,7 @@ import com.example.emotionrecognition.mtcnn.MTCNNModel
 import kotlinx.android.synthetic.main.activity_second.*
 import java.util.*
 
+
 class MainActivity : AppCompatActivity() {
     companion object {
         var content: Uri? = null

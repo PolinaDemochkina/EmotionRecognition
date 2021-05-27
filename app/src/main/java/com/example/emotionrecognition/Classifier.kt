@@ -16,7 +16,7 @@ class LinearSVC(context: Context) {
 
     private val clf: Classifier
 
-    fun predict(features: FloatArray): Int {
+    fun predict(features: List<Float>): Int {
         var classIdx = 0
         var classVal = Double.NEGATIVE_INFINITY
         var i = 0

@@ -10,6 +10,11 @@ import android.util.Pair
 import com.example.emotionrecognition.mtcnn.Box
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
+import org.jetbrains.kotlinx.multik.jvm.JvmMath.maxD2
+import org.jetbrains.kotlinx.multik.jvm.JvmMath.minD2
+import org.jetbrains.kotlinx.multik.jvm.JvmStatistics.meanD2
+import org.jetbrains.kotlinx.multik.ndarray.data.*
+import org.jetbrains.kotlinx.multik.ndarray.operations.toList
 import org.pytorch.IValue
 import org.pytorch.Module
 import org.pytorch.Tensor
@@ -70,17 +75,41 @@ class EmotionPyTorchVideoClassifier(context: Context) {
         val length = 1280
         val res = classifyVideo(fromMs, toMs, mmr)
         val scores = res.second
-        val features = mk.ndarray(mk[res.second.sliceArray(0 until length).toList(),
-                res.second.sliceArray(length until length*2).toList(),
-                res.second.sliceArray(length*2 until length*3).toList(),
-                res.second.sliceArray(length*3 until length*4).toList()])
-        val min = mk.math.minD2(features, axis = 0)
-        val max = mk.math.maxD2(features, axis = 0)
-        val mean = mk.stat.meanD2(features, axis = 0)
-//        val std =
-        val descriptor = scores + scores + scores + scores   // mean + std + min + max
+        val features = mk.ndarray(mk[scores.sliceArray(0 until length).toList(),
+                scores.sliceArray(length until length*2).toList(),
+                scores.sliceArray(length*2 until length*3).toList(),
+                scores.sliceArray(length*3 until length*4).toList()])
+        val min = minD2(features, axis = 0).toList()
+        val max = maxD2(features, axis = 0).toList()
+        val mean: List<Float> = meanD2(features, axis = 0).toList().map { it.toFloat() }
+        val std = mutableListOf<Float>()
+        val rows = features.shape[0]
+        for (i in 0 until length) {
+            std.add(calculateSD(features[0.r..rows, i].toList()))
+        }
+        val descriptor = mean + std + min + max // scores + scores + scores + scores   // mean + std + min + max
         val index = MainActivity.clf?.predict(descriptor)
+        Log.e(MainActivity.TAG, index.toString())
         return labels!![index!!]
+    }
+
+    private fun calculateSD(numArray: List<Float>): Float {
+        var sum = 0.0
+        var standardDeviation = 0.0
+
+        for (num in numArray) {
+            sum += num
+        }
+
+        val mean = sum / numArray.size
+
+        for (num in numArray) {
+            standardDeviation += Math.pow(num - mean, 2.0)
+        }
+
+        val divider = numArray.size - 1
+
+        return Math.sqrt(standardDeviation / divider).toFloat()
     }
 
     private fun classifyVideo( fromMs: Int,
