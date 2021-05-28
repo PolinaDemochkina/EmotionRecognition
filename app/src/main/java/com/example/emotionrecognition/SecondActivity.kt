@@ -15,18 +15,21 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import com.example.emotionrecognition.mtcnn.Box
 import kotlinx.android.synthetic.main.activity_second.*
-import org.pytorch.IValue
-import org.pytorch.Tensor
 import java.util.*
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTimedValue
 
 
 class SecondActivity : Runnable, AppCompatActivity() {
     companion object {
-        fun resize(frame: Bitmap?): Bitmap? {
-            val ratio =Math.min(frame!!.width, frame.height) / Constants.TARGET_VIDEO_SIZE.toFloat()
+        fun resize(frame: Bitmap?, image: Boolean): Bitmap? {
+            var ratio: Float
+            if (image) {
+                ratio = Math.min(frame!!.width, frame.height) / Constants.TARGET_IMAGE_SIZE.toFloat()
+            }
+            else {
+                ratio =Math.min(frame!!.width, frame.height) / Constants.TARGET_VIDEO_SIZE.toFloat()
+            }
 
             return Bitmap.createScaledBitmap(
                 frame!!,
@@ -110,7 +113,7 @@ class SecondActivity : Runnable, AppCompatActivity() {
 
     @RequiresApi(Build.VERSION_CODES.N)
     private fun imageRecognition() {
-        val resizedBitmap: Bitmap? = resize(getImage(MainActivity.content!!))
+        val resizedBitmap: Bitmap? = resize(getImage(MainActivity.content!!), true)
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
             resizedBitmap!!,
             MainActivity.minFaceSize

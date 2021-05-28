@@ -134,7 +134,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
             val timeUs = (1000 * (fromMs + ((toMs - fromMs) * i /
                     (Constants.COUNT_OF_FRAMES_PER_INFERENCE - 1.0)).toInt())).toLong()
             val bitmap = mmr.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-            val resizedBitmap = SecondActivity.resize(bitmap)
+            val resizedBitmap = SecondActivity.resize(bitmap, false)
             val start = System.nanoTime()
             val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
                 resizedBitmap!!,
