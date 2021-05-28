@@ -6,51 +6,44 @@
     android:layout_height="match_parent"
     tools:context=".SecondActivity">
 
-    <VideoView
-        android:id="@+id/video"
-        android:layout_width="411dp"
-        android:layout_height="513dp"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:background="#141432"
+        android:visibility="visible"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="1.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="1.0"
         app:srcCompat="@drawable/button_style"
         tools:ignore="ContentDescription" />
-
-    <Button
-        android:id="@+id/Analyze"
-        android:layout_width="wrap_content"
-        android:layout_height="35dp"
-        android:layout_marginBottom="32dp"
-        android:background="@drawable/button_style"
-        android:onClick="analyze"
-        android:paddingTop="2dp"
-        android:text="@string/analyze"
-        android:textColor="#141432"
-        app:backgroundTint="#9FFFCB"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.5"
-        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
         android:id="@+id/Photo"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/imageView"
         tools:ignore="ContentDescription" />
+
+    <VideoView
+        android:id="@+id/video"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginBottom="128dp"
+        android:layout_gravity="center"
+        android:visibility="invisible"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/imageView" />
 
     <ImageView
         android:id="@+id/TopPanel"
@@ -71,7 +64,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="6dp"
-        android:layout_marginLeft="6dp"
         android:layout_marginBottom="8dp"
         android:background="#00FFFFFF"
         android:onClick="back"
@@ -91,11 +83,9 @@
         android:layout_marginTop="16dp"
         android:textColor="#9FFFCB"
         android:visibility="invisible"
-        app:layout_constraintBottom_toTopOf="@+id/Analyze"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/video"
-        app:layout_constraintVertical_bias="0.0" />
+        app:layout_constraintTop_toBottomOf="@+id/video" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

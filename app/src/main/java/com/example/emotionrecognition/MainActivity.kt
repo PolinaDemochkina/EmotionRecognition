@@ -20,7 +20,6 @@ class MainActivity : AppCompatActivity() {
         var content: Uri? = null
         val TAG = "MainActivity"
         var mtcnnFaceDetector: MTCNNModel? = null
-        var imageDetector: EmotionPyTorchClassifier? = null
         var videoDetector: EmotionPyTorchVideoClassifier? = null
         var clf: LinearSVC? = null
         val minFaceSize = 32
@@ -133,12 +132,6 @@ class MainActivity : AppCompatActivity() {
             mtcnnFaceDetector = MTCNNModel.Companion.create(assets)
         } catch (e: Exception) {
             Log.d(TAG, "Exception initializing MTCNNModel!${e.stackTraceToString()}")
-        }
-
-        try {
-            imageDetector = EmotionPyTorchClassifier(applicationContext)
-        } catch (e: java.lang.Exception) {
-            Log.e(TAG, "Exception initializing feature extractor!", e)
         }
 
         try {
