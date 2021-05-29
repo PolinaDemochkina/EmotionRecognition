@@ -22,7 +22,6 @@ class MainActivity : AppCompatActivity() {
         var mtcnnFaceDetector: MTCNNModel? = null
         var videoDetector: EmotionPyTorchVideoClassifier? = null
         var clf: LinearSVC? = null
-        val minFaceSize = 32
     }
 
     private val REQUEST_ACCESS_TYPE = 1

@@ -37,7 +37,7 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
          // RESIZE THE BIT MAP
          matrix.postScale(scale, scale)
          return Bitmap.createBitmap(
-                 bm, 0, 0, width, height, matrix, false)  //true
+                 bm, 0, 0, width, height, matrix, false)
     }
 
     private fun normalizeImage(bitmap: Bitmap): FloatArray {
@@ -189,7 +189,7 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
          val matrix = Matrix()
          val scale = 1.0f * size / box.width()
          matrix.postScale(scale, scale)
-         val croped = Bitmap.createBitmap(bitmap, box.left(), box.top(), box.width(), box.height(), matrix, true)
+         val croped = Bitmap.createBitmap(bitmap, box.left(), box.top(), box.width(), box.height(), matrix, false)
          //(3)save
          val pixels_buf = IntArray(size * size)
          croped.getPixels(pixels_buf, 0, croped.width, 0, 0, croped.width, croped.height)

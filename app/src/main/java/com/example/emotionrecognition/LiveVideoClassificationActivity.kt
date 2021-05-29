@@ -75,7 +75,7 @@ class LiveVideoClassificationActivity :
         val start = System.nanoTime()
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
             resizedBitmap!!,
-            MainActivity.minFaceSize
+            Constants.MIN_FACE_SIZE
         )
         val elapsed = (System.nanoTime() - start)/10000000
         Log.e(MainActivity.TAG, "Timecost to run MTCNN: $elapsed")
@@ -87,19 +87,17 @@ class LiveVideoClassificationActivity :
         val bbox = box?.transform2Rect()
         if (MainActivity.videoDetector != null &&  bbox != null) {
             val bboxOrig = Rect(
-                bbox.left * bitmap.getWidth() / resizedBitmap.width,
-                bitmap.getHeight() * bbox.top / resizedBitmap.height,
-                bitmap.getWidth() * bbox.right / resizedBitmap.width,
-                bitmap.getHeight() * bbox.bottom / resizedBitmap.height
+                bitmap.width * bbox.left / resizedBitmap.width,
+                bitmap.height * bbox.top / resizedBitmap.height,
+                bitmap.width * bbox.right / resizedBitmap.width,
+                bitmap.height * bbox.bottom / resizedBitmap.height
             )
-            val tmp = Bitmap.createBitmap(
-                bitmap,
+            val face = Bitmap.createScaledBitmap(Bitmap.createBitmap(bitmap,
                 bboxOrig.left,
                 bboxOrig.top,
                 bboxOrig.width(),
-                bboxOrig.height()
-            )
-            val face = Bitmap.createScaledBitmap(tmp, Constants.TARGET_FACE_SIZE, Constants.TARGET_FACE_SIZE, false)
+                bboxOrig.height()),
+                Constants.TARGET_FACE_SIZE, Constants.TARGET_FACE_SIZE, false)
 
             TensorImageUtils.bitmapToFloatBuffer(
                 face,

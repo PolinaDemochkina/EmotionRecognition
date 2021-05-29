@@ -7,6 +7,7 @@ import android.media.MediaMetadataRetriever
 import android.os.SystemClock
 import android.util.Log
 import android.util.Pair
+import androidx.annotation.WorkerThread
 import com.example.emotionrecognition.mtcnn.Box
 import org.jetbrains.kotlinx.multik.api.mk
 import org.jetbrains.kotlinx.multik.api.ndarray
@@ -170,11 +171,11 @@ class EmotionPyTorchVideoClassifier(context: Context) {
         return Pair(elapsed, scores)
     }
 
-        @ExperimentalTime
+    @ExperimentalTime
+    @WorkerThread
     private fun classifyVideo(fromMs: Int,
                               toMs: Int,
                               mmr: MediaMetadataRetriever ): Pair<Long, FloatArray> {
-        val inTensorBuffer = Tensor.allocateFloatBuffer(Constants.MODEL_INPUT_SIZE*Constants.COUNT_OF_FRAMES_PER_INFERENCE)  // FIX!
         var numFrames = 0
         var faces : MutableList<Bitmap> = mutableListOf()
 
@@ -186,7 +187,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
             val start = System.nanoTime()
             val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
                 resizedBitmap!!,
-                MainActivity.minFaceSize
+                Constants.MIN_FACE_SIZE
             )
             val elapsed = (System.nanoTime() - start)/10000000
             Log.e(TAG, "Timecost to run MTCNN: $elapsed")
@@ -198,24 +199,25 @@ class EmotionPyTorchVideoClassifier(context: Context) {
             val bbox = box?.transform2Rect()
             if (MainActivity.videoDetector != null &&  bbox != null) {
                 val bboxOrig = Rect(
-                    bbox.left * resizedBitmap.width / resizedBitmap.width,
-                    resizedBitmap.height * bbox.top / resizedBitmap.height,
-                    resizedBitmap.width * bbox.right / resizedBitmap.width,
-                    resizedBitmap.height * bbox.bottom / resizedBitmap.height
+                    bitmap!!.width * bbox.left / resizedBitmap.width,
+                    bitmap.height * bbox.top / resizedBitmap.height,
+                    bitmap.width * bbox.right / resizedBitmap.width,
+                    bitmap.height * bbox.bottom / resizedBitmap.height
                 )
-                faces.add(Bitmap.createScaledBitmap(Bitmap.createBitmap(
-                    resizedBitmap,
+                faces.add(Bitmap.createScaledBitmap(Bitmap.createBitmap(bitmap,
                     bboxOrig.left,
                     bboxOrig.top,
                     bboxOrig.width(),
-                    bboxOrig.height()
-                ), Constants.TARGET_FACE_SIZE, Constants.TARGET_FACE_SIZE, false))
+                    bboxOrig.height()),
+                    Constants.TARGET_FACE_SIZE, Constants.TARGET_FACE_SIZE, false))
 
                 numFrames += 1
             }
         }
 
         if (numFrames > 0) {
+            val inTensorBuffer = Tensor.allocateFloatBuffer(Constants.MODEL_INPUT_SIZE*numFrames)
+
             for (i in 0 until numFrames) {
                 TensorImageUtils.bitmapToFloatBuffer(
                     faces[i],

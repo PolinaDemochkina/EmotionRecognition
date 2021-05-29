@@ -8,7 +8,6 @@ import android.media.MediaMetadataRetriever
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.SystemClock
 import android.util.Log
 import android.view.View
 import androidx.annotation.RequiresApi
@@ -113,7 +112,7 @@ class SecondActivity : Runnable, AppCompatActivity() {
         val resizedBitmap: Bitmap? = resize(getImage(MainActivity.content!!), true)
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
             resizedBitmap!!,
-            MainActivity.minFaceSize
+            Constants.MIN_FACE_SIZE
         )
 
         val tempBmp = Bitmap.createBitmap(resizedBitmap.width, resizedBitmap.height, Bitmap.Config.ARGB_8888)
