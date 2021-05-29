@@ -37,7 +37,7 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
          // RESIZE THE BIT MAP
          matrix.postScale(scale, scale)
          return Bitmap.createBitmap(
-                 bm, 0, 0, width, height, matrix, true)
+                 bm, 0, 0, width, height, matrix, false)  //true
     }
 
     private fun normalizeImage(bitmap: Bitmap): FloatArray {
@@ -314,6 +314,7 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
         square_limit(boxes, bitmap.width, bitmap.height)
         //【3】ONet
         boxes = ONet(bitmap, boxes)
+        square_limit(boxes, bitmap.width, bitmap.height)
         //return
         return boxes
     }

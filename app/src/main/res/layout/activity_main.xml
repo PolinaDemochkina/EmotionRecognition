@@ -20,18 +20,32 @@
 
     <Button
         android:id="@+id/Start"
-        android:layout_width="wrap_content"
-        android:layout_height="35dp"
+        android:layout_width="128dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="32dp"
         android:layout_marginBottom="32dp"
         android:background="@drawable/button_style"
         android:onClick="nextStep"
         android:paddingTop="2dp"
-        android:text="@string/get_started"
+        android:text="@string/gallery"
         android:textColor="#141432"
         app:backgroundTint="#9FFFCB"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent" />
+
+    <Button
+        android:id="@+id/Live"
+        android:layout_width="128dp"
+        android:layout_height="36dp"
+        android:layout_marginEnd="32dp"
+        android:background="@drawable/button_style"
+        android:onClick="startLive"
+        android:paddingTop="2dp"
+        android:text="@string/live"
+        android:textColor="#141432"
+        app:backgroundTint="#9FFFCB"
+        app:layout_constraintBottom_toBottomOf="@+id/Start"
+        app:layout_constraintEnd_toEndOf="parent" />
 
     <TextView
         android:id="@+id/Header"
@@ -47,15 +61,13 @@
 
     <TextView
         android:id="@+id/Instruction"
-        android:layout_width="250dp"
-        android:layout_height="75dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_marginStart="100dp"
-        android:layout_marginLeft="100dp"
         android:layout_marginEnd="100dp"
-        android:layout_marginRight="100dp"
         android:layout_marginBottom="96dp"
         android:gravity="center"
-        android:text="@string/choose_a_video_from_your_gallery_and_our_neural_network_will_recognize_the_emotions"
+        android:text="@string/instruction"
         android:textColor="#FFFFFF"
         android:textSize="16sp"
         app:layout_constraintBottom_toTopOf="@+id/Start"
@@ -67,11 +79,11 @@
         android:layout_width="300dp"
         android:layout_height="300dp"
         android:src="@drawable/ic_home_page_technique"
-        android:tint="#9FFFCB"
         app:layout_constraintBottom_toTopOf="@+id/Header"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="@+id/imageView"
         app:layout_constraintVertical_bias="0.501"
-        tools:ignore="ContentDescription" />
+        tools:ignore="ContentDescription"
+        app:tint="#9FFFCB" />
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -20,6 +20,7 @@ import org.pytorch.Module
 import org.pytorch.Tensor
 import org.pytorch.torchvision.TensorImageUtils
 import java.io.*
+import java.nio.FloatBuffer
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.system.measureTimeMillis
@@ -123,6 +124,53 @@ class EmotionPyTorchVideoClassifier(context: Context) {
     }
 
     @ExperimentalTime
+    fun recognizeLiveVideo(inTensorBuffer: FloatBuffer): String {
+        val length = 1280
+        val res = classifyLive(inTensorBuffer).second
+        if (res != null) {
+            val scores = mutableListOf<Float>()
+            for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE){
+                if ((i+1)*length <= res.size) {
+                    scores.addAll(res.sliceArray(length*i until length*(i+1)).toList())
+                }
+            }
+            val features = mk.ndarray(mk[scores])
+            val min = minD2(features, axis = 0).toList()
+            val max = maxD2(features, axis = 0).toList()
+            val mean: List<Float> = meanD2(features, axis = 0).toList().map { it.toFloat() }
+            val std = mutableListOf<Float>()
+            val rows = features.shape[0]
+            for (i in 0 until length) {
+                std.add(calculateSD(features[0.r..rows, i].toList()))
+            }
+            val descriptor = mean + std + min + max
+            val index = MainActivity.clf?.predict(descriptor)
+            Log.e(MainActivity.TAG, index.toString())
+            return labels!![index!!]
+        }
+        return ""
+    }
+
+    private fun classifyLive(inTensorBuffer: FloatBuffer): Pair<Long, FloatArray> {
+        val inputTensor = Tensor.fromBlob(
+            inTensorBuffer, longArrayOf(
+                Constants.COUNT_OF_FRAMES_PER_INFERENCE.toLong(),
+                3, //channels
+                Constants.TARGET_FACE_SIZE.toLong(), Constants.TARGET_FACE_SIZE.toLong()
+            )
+        )
+        val start = System.nanoTime()
+        val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
+        val elapsed = (System.nanoTime() - start)/10000000
+
+        val scores = outputTensor.dataAsFloatArray
+        Log.d(TAG, outputTensor.shape()[0].toString())
+        Log.d(TAG, outputTensor.shape()[1].toString())
+
+        return Pair(elapsed, scores)
+    }
+
+        @ExperimentalTime
     private fun classifyVideo(fromMs: Int,
                               toMs: Int,
                               mmr: MediaMetadataRetriever ): Pair<Long, FloatArray> {

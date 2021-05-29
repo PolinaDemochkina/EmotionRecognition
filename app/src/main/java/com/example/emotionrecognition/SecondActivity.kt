@@ -42,7 +42,6 @@ class SecondActivity : Runnable, AppCompatActivity() {
 
     private var mThread: Thread? = Thread(this)
     private var mStopThread = true
-    private val mResults: ArrayList<String> = arrayListOf()
 
     @SuppressLint("WrongThread")
     @RequiresApi(Build.VERSION_CODES.N)
@@ -53,11 +52,9 @@ class SecondActivity : Runnable, AppCompatActivity() {
         val cR: ContentResolver = this.applicationContext.contentResolver
         val type = cR.getType(MainActivity.content!!)
         if (type == "image/jpeg") {
-            video.visibility = View.INVISIBLE
             Photo.visibility = View.VISIBLE
             imageRecognition()
         } else if (type == "video/mp4") {
-            Photo.visibility = View.INVISIBLE
             video.visibility = View.VISIBLE
             startVideo()
         }
@@ -187,7 +184,6 @@ class SecondActivity : Runnable, AppCompatActivity() {
 
         // for each second of the video, make inference to get the class label
         val durationTo = durationMs.toInt()
-        mResults.clear()
         var from = 0
         while (!mStopThread && from < durationTo) {
             from += 1000
@@ -222,7 +218,6 @@ class SecondActivity : Runnable, AppCompatActivity() {
                 detectionResult.visibility = View.VISIBLE
                 detectionResult?.text = String.format(result)
             }
-            mResults.add(result)
         }
     }
 

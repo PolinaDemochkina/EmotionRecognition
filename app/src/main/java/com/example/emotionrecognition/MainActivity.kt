@@ -146,4 +146,9 @@ class MainActivity : AppCompatActivity() {
             Log.e(TAG, "Exception initializing classifier!", e)
         }
     }
+
+    fun startLive(view: View) {
+        val intent = Intent(this@MainActivity, LiveVideoClassificationActivity::class.java)
+        startActivity(intent)
+    }
 }

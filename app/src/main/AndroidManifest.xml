@@ -16,6 +16,8 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.EmotionRecognition">
         <activity android:name=".SecondActivity"></activity>
+        <activity android:name=".LiveVideoClassificationActivity"></activity>
+        <activity android:name=".BaseModuleActivity"></activity>
         <activity android:name=".MainActivity">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />

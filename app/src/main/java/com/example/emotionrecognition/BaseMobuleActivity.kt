@@ -6,6 +6,7 @@ import android.os.HandlerThread
 import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 
+
 open class BaseModuleActivity : AppCompatActivity() {
     protected var mBackgroundThread: HandlerThread? = null
     protected var mBackgroundHandler: Handler? = null
