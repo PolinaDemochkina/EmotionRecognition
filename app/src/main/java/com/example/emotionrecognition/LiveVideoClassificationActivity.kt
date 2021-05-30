@@ -3,10 +3,11 @@ package com.example.emotionrecognition
 import android.graphics.*
 import android.media.Image
 import android.util.Log
+import android.util.Size
 import android.view.TextureView
 import android.view.View
 import android.view.ViewStub
-import android.widget.TextView
+import android.widget.ImageView
 import androidx.annotation.WorkerThread
 import androidx.camera.core.ImageProxy
 import com.example.emotionrecognition.mtcnn.Box
@@ -20,26 +21,47 @@ import kotlin.time.ExperimentalTime
 
 class LiveVideoClassificationActivity :
     AbstractCameraXActivity<LiveVideoClassificationActivity.AnalysisResult?>() {
-    private var mResultView: TextView? = null
     private var mFrameCount = 0
     private var inTensorBuffer: FloatBuffer? = null
 
-    class AnalysisResult(val mResults: String)
+    class AnalysisResult(val box: Rect, val mResults: String, val width: Int, val height: Int)
 
     override fun getContentViewLayoutId(): Int {
         return R.layout.activity_live_video_classification
     }
 
     override fun getCameraPreviewTextureView(): TextureView {
-        mResultView = findViewById(R.id.resultView)
-        return (findViewById<ViewStub>(R.id.object_detection_texture_view_stub))
-            .inflate()
-            .findViewById(R.id.object_detection_texture_view)
+        return findViewById(R.id.object_detection_texture_view)
     }
 
-    override fun applyToUiAnalyzeImageResult(result: AnalysisResult?) {
-        mResultView!!.text = result!!.mResults
-        mResultView!!.invalidate()
+    override fun applyToUiAnalyzeImageResult(result: AnalysisResult?, width: Int, height: Int) {
+        val emotion = result!!.mResults
+        val mOverlayView: ImageView = findViewById(R.id.overlay)
+        val tempBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(tempBmp)
+        val p = Paint()
+        p.style = Paint.Style.STROKE
+        p.isAntiAlias = true
+        p.isFilterBitmap = true
+        p.isDither = true
+        p.color = Color.parseColor("#9FFFCB")
+        p.strokeWidth = 6f
+        val p_text = Paint()
+        p_text.color = Color.WHITE
+        p_text.style = Paint.Style.FILL
+        p_text.color = Color.parseColor("#9FFFCB")
+        p_text.textSize = 28f
+        val bbox = result.box
+        p.color = Color.parseColor("#9FFFCB")
+        c.drawRect(bbox, p)
+        c.drawText(emotion, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
+
+        mOverlayView.setImageBitmap(tempBmp)
+    }
+
+    private fun Bitmap.flip(x: Float, y: Float, cx: Float, cy: Float): Bitmap {
+        val matrix = Matrix().apply { postScale(x, y, cx, cy) }
+        return Bitmap.createBitmap(this, 0, 0, width, height, matrix, true)
     }
 
     private fun imgToBitmap(image: Image): Bitmap {
@@ -63,13 +85,13 @@ class LiveVideoClassificationActivity :
 
     @ExperimentalTime
     @WorkerThread
-    override fun analyzeImage(image: ImageProxy?, rotationDegrees: Int): AnalysisResult? {
+    override fun analyzeImage(image: ImageProxy?, rotationDegrees: Int, width: Int, height: Int): AnalysisResult? {
         if (mFrameCount == 0) inTensorBuffer =
             Tensor.allocateFloatBuffer(Constants.MODEL_INPUT_SIZE*Constants.COUNT_OF_FRAMES_PER_INFERENCE)
 
         var bitmap = imgToBitmap(image!!.image!!)
         val matrix = Matrix()
-        matrix.postRotate(90.0f)
+        matrix.postRotate(270.0f)
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, false)
         val resizedBitmap = SecondActivity.resize(bitmap, false)
         val start = System.nanoTime()
@@ -85,8 +107,9 @@ class LiveVideoClassificationActivity :
         }
 
         val bbox = box?.transform2Rect()
+        var bboxOrig: Rect? = null
         if (MainActivity.videoDetector != null &&  bbox != null) {
-            val bboxOrig = Rect(
+            bboxOrig = Rect(
                 bitmap.width * bbox.left / resizedBitmap.width,
                 bitmap.height * bbox.top / resizedBitmap.height,
                 bitmap.width * bbox.right / resizedBitmap.width,
@@ -121,7 +144,12 @@ class LiveVideoClassificationActivity :
 
         val result = MainActivity.videoDetector!!.recognizeLiveVideo(inTensorBuffer!!)
 
-        return AnalysisResult(String.format("%s", result))
+        return AnalysisResult(Rect(
+            width - (width * bbox!!.left / resizedBitmap.width),
+            height * bbox.top / resizedBitmap.height,
+            width - (width * bbox.right / resizedBitmap.width),
+            height * bbox.bottom / resizedBitmap.height
+        ), result, width, height)
     }
 
     fun back(view: View) {

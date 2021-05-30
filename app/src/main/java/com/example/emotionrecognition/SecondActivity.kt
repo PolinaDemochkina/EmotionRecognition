@@ -136,18 +136,12 @@ class SecondActivity : Runnable, AppCompatActivity() {
             p.color = Color.parseColor("#9FFFCB")
             c.drawRect(bbox, p)
             if (MainActivity.videoDetector != null && bbox.width() > 0 && bbox.height() > 0) {
-                val bboxOrig = Rect(
-                    bbox.left * resizedBitmap.width / resizedBitmap.width,
-                    resizedBitmap.height * bbox.top / resizedBitmap.height,
-                    resizedBitmap.width * bbox.right / resizedBitmap.width,
-                    resizedBitmap.height * bbox.bottom / resizedBitmap.height
-                )
                 val faceBitmap = Bitmap.createBitmap(
                     resizedBitmap,
-                    bboxOrig.left,
-                    bboxOrig.top,
-                    bboxOrig.width(),
-                    bboxOrig.height()
+                    bbox.left,
+                    bbox.top,
+                    bbox.width(),
+                    bbox.height()
                 )
                 val res: String = MainActivity.videoDetector!!.recognizeImage(faceBitmap)
                 c.drawText(res, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)

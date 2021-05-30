@@ -1,10 +1,15 @@
 package com.example.emotionrecognition
 
 import android.Manifest
+import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
+import android.util.DisplayMetrics
+import android.util.Log
+import android.util.Rational
 import android.util.Size
 import android.view.TextureView
+import android.widget.ImageView
 import android.widget.Toast
 import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
@@ -57,37 +62,48 @@ abstract class  AbstractCameraXActivity<R> : BaseModuleActivity() {
         }
     }
 
+    @SuppressLint("RestrictedApi")
     open fun setupCameraX() {
         val textureView = getCameraPreviewTextureView()
-        val previewConfig = PreviewConfig.Builder().build()
+        val previewConfig = PreviewConfig.Builder()
+            .setLensFacing(CameraX.LensFacing.FRONT)
+            .build()
         val preview = Preview(previewConfig)
+        var size: Size? = null
         preview.onPreviewOutputUpdateListener =
             OnPreviewOutputUpdateListener { output: PreviewOutput ->
                 textureView.setSurfaceTexture(
                     output.surfaceTexture
                 )
+                size = output.textureSize
             }
         val imageAnalysisConfig = ImageAnalysisConfig.Builder()
-            .setTargetResolution(Size(720, 1280))
+//            .setTargetResolution(Size(720, 1280))
+            .setLensFacing(CameraX.LensFacing.FRONT)
             .setCallbackHandler(mBackgroundHandler)
             .setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
             .build()
+
         val imageAnalysis = ImageAnalysis(imageAnalysisConfig)
         imageAnalysis.analyzer =
             ImageAnalysis.Analyzer { image: ImageProxy?, rotationDegrees: Int ->
 //                if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime < 500) {
 //                    return@setAnalyzer
 //                }
-                val result = analyzeImage(image, rotationDegrees)
+                val height = size!!.height
+                val width = size!!.width
+                val result = analyzeImage(image, rotationDegrees, height, width)
                 if (result != null) {
-                    runOnUiThread { applyToUiAnalyzeImageResult(result) }
+                    runOnUiThread { applyToUiAnalyzeImageResult(result, height, width)}
                 }
             }
+
+        CameraX.unbindAll()
         CameraX.bindToLifecycle(this, preview, imageAnalysis)
     }
 
     @WorkerThread
-    protected abstract fun analyzeImage(image: ImageProxy?, rotationDegrees: Int): R?
+    protected abstract fun analyzeImage(image: ImageProxy?, rotationDegrees: Int, width: Int, height: Int): R?
     @UiThread
-    protected abstract fun applyToUiAnalyzeImageResult(result: R)
+    protected abstract fun applyToUiAnalyzeImageResult(result: R, width: Int, height: Int)
 }

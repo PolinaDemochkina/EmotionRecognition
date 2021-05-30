@@ -5,31 +5,24 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="#141432"
-    android:fitsSystemWindows="true">
+    android:fitsSystemWindows="true"
+    android:layout_gravity="center">
 
-    <ViewStub
-        android:id="@+id/object_detection_texture_view_stub"
+    <TextureView
+        android:id="@+id/object_detection_texture_view"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:layout="@layout/texture_view"
         app:layout_constraintBottom_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:id="@+id/resultView"
+    <ImageView
+        android:id="@+id/overlay"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#141432"
-        android:lines="2"
-        android:minLines="2"
-        android:singleLine="false"
-        android:textAlignment="center"
-        android:textColor="#9FFFCB"
-        android:textSize="16sp"
-        android:gravity="center"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
+        android:layout_height="match_parent"
+        app:layout_constraintBottom_toTopOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent" />
 
     <ImageView
         android:id="@+id/TopPanel2"
