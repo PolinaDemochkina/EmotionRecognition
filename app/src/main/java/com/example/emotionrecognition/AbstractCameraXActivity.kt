@@ -4,9 +4,7 @@ import android.Manifest
 import android.annotation.SuppressLint
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.util.Log
-import android.util.Rational
+import android.os.SystemClock
 import android.util.Size
 import android.view.TextureView
 import android.widget.ImageView
@@ -27,6 +25,7 @@ abstract class  AbstractCameraXActivity<R> : BaseModuleActivity() {
     protected abstract fun getContentViewLayoutId(): Int
     protected abstract fun getCameraPreviewTextureView(): TextureView
     private var preview: Preview? = null
+    private var mLastAnalysisResultTime: Long = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -77,8 +76,8 @@ abstract class  AbstractCameraXActivity<R> : BaseModuleActivity() {
                 )
                 size = output.textureSize
             }
+
         val imageAnalysisConfig = ImageAnalysisConfig.Builder()
-//            .setTargetResolution(Size(720, 1280))
             .setLensFacing(CameraX.LensFacing.FRONT)
             .setCallbackHandler(mBackgroundHandler)
             .setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
@@ -86,14 +85,18 @@ abstract class  AbstractCameraXActivity<R> : BaseModuleActivity() {
 
         val imageAnalysis = ImageAnalysis(imageAnalysisConfig)
         imageAnalysis.analyzer =
-            ImageAnalysis.Analyzer { image: ImageProxy?, rotationDegrees: Int ->
-//                if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime < 500) {
-//                    return@setAnalyzer
-//                }
+            ImageAnalysis.Analyzer setAnalyzer@{ image: ImageProxy?, rotationDegrees: Int ->
+                if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime > 250) {
+                    runOnUiThread {
+                        val overlay: ImageView = findViewById(com.example.emotionrecognition.R.id.overlay)
+                        overlay.setImageResource(android.R.color.transparent)
+                    }
+                }
                 val height = size!!.height
                 val width = size!!.width
                 val result = analyzeImage(image, rotationDegrees, height, width)
                 if (result != null) {
+                    mLastAnalysisResultTime = SystemClock.elapsedRealtime()
                     runOnUiThread { applyToUiAnalyzeImageResult(result, height, width)}
                 }
             }
