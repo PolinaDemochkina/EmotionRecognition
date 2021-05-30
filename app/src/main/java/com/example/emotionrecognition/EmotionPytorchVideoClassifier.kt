@@ -77,7 +77,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
         val descriptor = scores + scores + scores + scores
         val index = MainActivity.clf?.predict(descriptor)
         Log.e(TAG, labels!![index!!].toString())
-        return labels!![index!!]
+        return labels!![index]
     }
 
     @ExperimentalTime

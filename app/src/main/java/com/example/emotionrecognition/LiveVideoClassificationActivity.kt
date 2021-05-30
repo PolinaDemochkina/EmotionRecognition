@@ -3,10 +3,8 @@ package com.example.emotionrecognition
 import android.graphics.*
 import android.media.Image
 import android.util.Log
-import android.util.Size
 import android.view.TextureView
 import android.view.View
-import android.view.ViewStub
 import android.widget.ImageView
 import androidx.annotation.WorkerThread
 import androidx.camera.core.ImageProxy

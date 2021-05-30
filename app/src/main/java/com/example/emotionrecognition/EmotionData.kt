@@ -2,10 +2,10 @@ package com.example.emotionrecognition
 
 import java.io.Serializable
 
-class EmotionData : ClassifierResult, Serializable {
+class EmotionData: Serializable {
     var emotionScores: FloatArray? = null
 
-    constructor() {}
+    constructor()
     constructor(emotionScores: FloatArray) {
         this.emotionScores = FloatArray(emotionScores.size)
         System.arraycopy(emotionScores, 0, this.emotionScores, 0, emotionScores.size)

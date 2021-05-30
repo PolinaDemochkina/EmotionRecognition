@@ -31,7 +31,7 @@ class SecondActivity : Runnable, AppCompatActivity() {
             }
 
             return Bitmap.createScaledBitmap(
-                frame!!,
+                frame,
                 (frame.width / ratio).toInt(),
                 (frame.height / ratio).toInt(),
                 false
