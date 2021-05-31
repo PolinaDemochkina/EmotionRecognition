@@ -28,6 +28,33 @@ import java.util.*
 import kotlin.time.ExperimentalTime
 
 class  LiveVideoActivity : BaseModuleActivity() {
+    companion object {
+        @UiThread
+        fun applyToUiAnalyzeImageResult(result: AnalysisResult?, width: Int, height: Int, mOverlayView: ImageView) {
+            val emotion = result!!.mResults
+            val tempBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val c = Canvas(tempBmp)
+            val p = Paint()
+            p.style = Paint.Style.STROKE
+            p.isAntiAlias = true
+            p.isFilterBitmap = true
+            p.isDither = true
+            p.color = Color.parseColor("#9FFFCB")
+            p.strokeWidth = 6f
+            val p_text = Paint()
+            p_text.color = Color.WHITE
+            p_text.style = Paint.Style.FILL
+            p_text.color = Color.parseColor("#9FFFCB")
+            p_text.textSize = 28f
+            val bbox = result.box
+            p.color = Color.parseColor("#9FFFCB")
+            c.drawRect(bbox, p)
+            c.drawText(emotion, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
+
+            mOverlayView.setImageBitmap(tempBmp)
+        }
+    }
+
     private val REQUEST_CODE_CAMERA_PERMISSION = 200
     private val PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     private var mLastAnalysisResultTime: Long = 0
@@ -114,10 +141,10 @@ class  LiveVideoActivity : BaseModuleActivity() {
                 }
                 val height = size!!.height
                 val width = size!!.width
-                val result = analyzeImage(image, rotationDegrees, height, width)
+                val result = analyzeImage(image, height, width)
                 if (result != null) {
                     mLastAnalysisResultTime = SystemClock.elapsedRealtime()
-                    runOnUiThread { applyToUiAnalyzeImageResult(result, height, width)}
+                    runOnUiThread { applyToUiAnalyzeImageResult(result, height, width, findViewById(R.id.overlay))}
                 }
             }
 
@@ -125,35 +152,9 @@ class  LiveVideoActivity : BaseModuleActivity() {
         CameraX.bindToLifecycle(this, preview, imageAnalysis)
     }
 
-    @UiThread
-    fun applyToUiAnalyzeImageResult(result: AnalysisResult?, width: Int, height: Int) {
-        val emotion = result!!.mResults
-        val mOverlayView: ImageView = findViewById(com.example.emotionrecognition.R.id.overlay)
-        val tempBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        val c = Canvas(tempBmp)
-        val p = Paint()
-        p.style = Paint.Style.STROKE
-        p.isAntiAlias = true
-        p.isFilterBitmap = true
-        p.isDither = true
-        p.color = Color.parseColor("#9FFFCB")
-        p.strokeWidth = 6f
-        val p_text = Paint()
-        p_text.color = Color.WHITE
-        p_text.style = Paint.Style.FILL
-        p_text.color = Color.parseColor("#9FFFCB")
-        p_text.textSize = 28f
-        val bbox = result.box
-        p.color = Color.parseColor("#9FFFCB")
-        c.drawRect(bbox, p)
-        c.drawText(emotion, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
-
-        mOverlayView.setImageBitmap(tempBmp)
-    }
-
     @ExperimentalTime
     @WorkerThread
-    fun analyzeImage(image: ImageProxy?, rotationDegrees: Int, width: Int, height: Int): AnalysisResult? {
+    fun analyzeImage(image: ImageProxy?, width: Int, height: Int): AnalysisResult? {
         if (mFrameCount == 0) inTensorBuffer =
             Tensor.allocateFloatBuffer(Constants.MODEL_INPUT_SIZE*Constants.COUNT_OF_FRAMES_PER_INFERENCE)
 
@@ -161,7 +162,7 @@ class  LiveVideoActivity : BaseModuleActivity() {
         val matrix = Matrix()
         matrix.postRotate(270.0f)
         bitmap = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, false)
-        val resizedBitmap = SecondActivity.resize(bitmap, false)
+        val resizedBitmap = MainActivity.resize(bitmap, false)
         val start = System.nanoTime()
         val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
             resizedBitmap!!,
@@ -175,7 +176,7 @@ class  LiveVideoActivity : BaseModuleActivity() {
         }
 
         val bbox = box?.transform2Rect()
-        var bboxOrig: Rect? = null
+        var bboxOrig: Rect?
         if (MainActivity.videoDetector != null &&  bbox != null) {
             bboxOrig = Rect(
                 bitmap.width * bbox.left / resizedBitmap.width,

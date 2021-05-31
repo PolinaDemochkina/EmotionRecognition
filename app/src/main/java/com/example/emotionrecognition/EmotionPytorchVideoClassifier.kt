@@ -70,17 +70,6 @@ class EmotionPyTorchVideoClassifier(context: Context) {
         }
     }
 
-    @ExperimentalTime
-    fun recognizeVideo(fromMs: Int,
-                       toMs: Int,
-                       mmr: MediaMetadataRetriever): String {
-        val res = classifyVideo(fromMs, toMs, mmr).second
-        if (res != null) {
-            return classifyFeatures(res)
-        }
-        return ""
-    }
-
     private fun classifyFeatures(res: FloatArray): String {
         val scores = mutableListOf<Float>()
         for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE){
@@ -119,14 +108,14 @@ class EmotionPyTorchVideoClassifier(context: Context) {
 
     @ExperimentalTime
     fun recognizeLiveVideo(inTensorBuffer: FloatBuffer): String {
-        val res = getFeatures(inTensorBuffer).second
+        val res = getFeatures(inTensorBuffer)
         if (res != null) {
             return classifyFeatures(res)
         }
         return ""
     }
 
-    private fun getFeatures(inTensorBuffer: FloatBuffer): Pair<Long, FloatArray> {
+    private fun getFeatures(inTensorBuffer: FloatBuffer): FloatArray {
         val inputTensor = Tensor.fromBlob(
             inTensorBuffer, longArrayOf(
                 Constants.COUNT_OF_FRAMES_PER_INFERENCE.toLong(),
@@ -134,30 +123,31 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                 Constants.TARGET_FACE_SIZE.toLong(), Constants.TARGET_FACE_SIZE.toLong()
             )
         )
-        val start = System.nanoTime()
         val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
-        val elapsed = (System.nanoTime() - start)/10000000
 
         val scores = outputTensor.dataAsFloatArray
         Log.d(TAG, outputTensor.shape()[0].toString())
         Log.d(TAG, outputTensor.shape()[1].toString())
 
-        return Pair(elapsed, scores)
+        return scores
     }
 
     @ExperimentalTime
     @WorkerThread
-    private fun classifyVideo(fromMs: Int,
-                              toMs: Int,
-                              mmr: MediaMetadataRetriever ): Pair<Long, FloatArray> {
+    fun recognizeVideo(fromMs: Int,
+                       toMs: Int,
+                       mmr: MediaMetadataRetriever ): LiveVideoActivity.AnalysisResult? {
         var numFrames = 0
         var faces : MutableList<Bitmap> = mutableListOf()
+        var bitmap: Bitmap? = null
+        var resizedBitmap: Bitmap? = null
+        var bbox: Rect? = null
 
         for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE) {
             val timeUs = (1000 * (fromMs + ((toMs - fromMs) * i /
                     (Constants.COUNT_OF_FRAMES_PER_INFERENCE - 1.0)).toInt())).toLong()
-            val bitmap = mmr.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
-            val resizedBitmap = SecondActivity.resize(bitmap, false)
+            bitmap = mmr.getFrameAtTime(timeUs, MediaMetadataRetriever.OPTION_CLOSEST_SYNC)
+            resizedBitmap = MainActivity.resize(bitmap, false)
             val start = System.nanoTime()
             val bboxes: Vector<Box> = MainActivity.mtcnnFaceDetector!!.detectFaces(
                 resizedBitmap!!,
@@ -170,7 +160,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                 box.score
             }
 
-            val bbox = box?.transform2Rect()
+            bbox = box?.transform2Rect()
             if (MainActivity.videoDetector != null &&  bbox != null) {
                 val bboxOrig = Rect(
                     bitmap!!.width * bbox.left / resizedBitmap.width,
@@ -205,30 +195,19 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                     (i * Constants.MODEL_INPUT_SIZE))
             }
 
-            return getFeatures(inTensorBuffer)
+            val features = getFeatures(inTensorBuffer)
+            val emotion = classifyFeatures(features)
+
+            return LiveVideoActivity.AnalysisResult(
+                Rect(
+                    (bitmap!!.width * bbox!!.left / resizedBitmap!!.width),
+                    bitmap.height * bbox.top / resizedBitmap.height,
+                    (bitmap.width * bbox.right / resizedBitmap.width),
+                    bitmap.height * bbox.bottom / resizedBitmap.height
+                ), emotion, bitmap.width, bitmap.height
+            )
         }
-        return Pair(0, null)
-    }
-
-    private fun classifyImage(bitmap: Bitmap): Pair<Long, FloatArray> {
-        var bitmap: Bitmap? = bitmap
-        bitmap = Bitmap.createScaledBitmap(bitmap!!,
-            Constants.TARGET_FACE_SIZE,
-            Constants.TARGET_FACE_SIZE,
-            false)
-        val inputTensor = TensorImageUtils.bitmapToFloat32Tensor(
-            bitmap,
-            TensorImageUtils.TORCHVISION_NORM_MEAN_RGB, TensorImageUtils.TORCHVISION_NORM_STD_RGB
-        )
-
-        val startTime = System.currentTimeMillis()
-        val outputTensor = module!!.forward(IValue.from(inputTensor)).toTensor()
-        val timecostMs = System.currentTimeMillis() - startTime
-        Log.i(TAG, String.format("Timecost to run PyTorch model inference: %dms", timecostMs))
-
-        val scores = outputTensor.dataAsFloatArray
-        Log.d(MainActivity.TAG, scores.size.toString())
-        return Pair(timecostMs, scores)
+        return null
     }
 
     init {

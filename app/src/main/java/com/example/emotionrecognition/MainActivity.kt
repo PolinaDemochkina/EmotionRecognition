@@ -2,6 +2,7 @@ package com.example.emotionrecognition
 
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.net.Uri
 import android.os.Bundle
 import android.util.Log
@@ -22,6 +23,21 @@ class MainActivity : AppCompatActivity() {
         var mtcnnFaceDetector: MTCNNModel? = null
         var videoDetector: EmotionPyTorchVideoClassifier? = null
         var clf: LinearSVC? = null
+
+        fun resize(frame: Bitmap?, image: Boolean): Bitmap? {
+            val ratio: Float = if (image) {
+                Math.min(frame!!.width, frame.height) / Constants.TARGET_IMAGE_SIZE.toFloat()
+            } else {
+                Math.min(frame!!.width, frame.height) / Constants.TARGET_VIDEO_SIZE.toFloat()
+            }
+
+            return Bitmap.createScaledBitmap(
+                frame,
+                (frame.width / ratio).toInt(),
+                (frame.height / ratio).toInt(),
+                false
+            )
+        }
     }
 
     private val REQUEST_ACCESS_TYPE = 1

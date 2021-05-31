@@ -4,35 +4,23 @@ import android.annotation.SuppressLint
 import android.content.ContentResolver
 import android.graphics.*
 import android.media.MediaMetadataRetriever
+import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
 import androidx.annotation.RequiresApi
+import androidx.annotation.UiThread
+import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
+import com.example.emotionrecognition.LiveVideoActivity.Companion.applyToUiAnalyzeImageResult
 import kotlinx.android.synthetic.main.activity_second.*
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
 
 
 class SecondActivity : Runnable, AppCompatActivity() {
-    companion object {
-        fun resize(frame: Bitmap?, image: Boolean): Bitmap? {
-            val ratio: Float = if (image) {
-                Math.min(frame!!.width, frame.height) / Constants.TARGET_IMAGE_SIZE.toFloat()
-            } else {
-                Math.min(frame!!.width, frame.height) / Constants.TARGET_VIDEO_SIZE.toFloat()
-            }
-
-            return Bitmap.createScaledBitmap(
-                frame,
-                (frame.width / ratio).toInt(),
-                (frame.height / ratio).toInt(),
-                false
-            )
-        }
-    }
-
     private var mThread: Thread? = Thread(this)
     private var mStopThread = true
 
@@ -56,6 +44,11 @@ class SecondActivity : Runnable, AppCompatActivity() {
             TopPanel.visibility = View.VISIBLE
             Back.visibility = View.VISIBLE
         }
+        video.setOnPreparedListener { mp: MediaPlayer ->
+//            mp.setVideoScalingMode(MediaPlayer.VIDEO_SCALING_MODE_SCALE_TO_FIT_WITH_CROPPING)
+//            mp.isLooping = true
+            mp.setScreenOnWhilePlaying(false)
+        }
         video?.start()
         if (mThread != null && mThread!!.isAlive) {
             try {
@@ -69,6 +62,7 @@ class SecondActivity : Runnable, AppCompatActivity() {
     }
 
     @ExperimentalTime
+    @WorkerThread
     override fun run() {   // video recognition
         val mmr = MediaMetadataRetriever()
         mmr.setDataSource(this.applicationContext, MainActivity.content)
@@ -78,16 +72,17 @@ class SecondActivity : Runnable, AppCompatActivity() {
         // for each second of the video, make inference to get the class label
         val durationTo = durationMs.toInt()
         var from = 0
+
         while (!mStopThread && from < durationTo) {
             from += 1000
             var to = from + 1000
             if (to > durationTo) to = ceil(durationMs).toInt()
 
             val start = System.nanoTime()
-            val result: String = MainActivity.videoDetector!!.recognizeVideo(from, to, mmr)
+            val result = MainActivity.videoDetector!!.recognizeVideo(from, to, mmr)
             val elapsed = (System.nanoTime() - start)/10000000
             Log.e(MainActivity.TAG, String.format("Timecost to run PyTorch model inference: $elapsed"))
-            Log.e(MainActivity.TAG, result)
+            Log.e(MainActivity.TAG, result!!.mResults)
 
             from += elapsed.toInt()
 
@@ -108,10 +103,10 @@ class SecondActivity : Runnable, AppCompatActivity() {
             }
 
             runOnUiThread {
-                detectionResult.visibility = View.VISIBLE
-                detectionResult?.text = String.format(result)
+                applyToUiAnalyzeImageResult(result, result.width, result.height, findViewById(R.id.gallery_overlay))
             }
         }
+        mmr.release()
     }
 
     private fun stopVideo() {

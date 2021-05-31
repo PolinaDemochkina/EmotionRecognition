@@ -1,16 +1,23 @@
 package com.example.emotionrecognition
 
+import android.graphics.Bitmap
+import android.graphics.Canvas
+import android.graphics.Color
+import android.graphics.Paint
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.widget.ImageView
+import androidx.annotation.UiThread
 import androidx.appcompat.app.AppCompatActivity
 
 
 open class BaseModuleActivity : AppCompatActivity() {
-    protected var mBackgroundThread: HandlerThread? = null
+    private var mBackgroundThread: HandlerThread? = null
     protected var mBackgroundHandler: Handler? = null
-    protected var mUIHandler: Handler? = null
+    private var mUIHandler: Handler? = null
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         mUIHandler = Handler(mainLooper)
@@ -32,7 +39,7 @@ open class BaseModuleActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    protected fun stopBackgroundThread() {
+    private fun stopBackgroundThread() {
         mBackgroundThread!!.quitSafely()
         try {
             mBackgroundThread!!.join()
