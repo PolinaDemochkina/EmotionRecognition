@@ -4,7 +4,6 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Rect
 import android.media.MediaMetadataRetriever
-import android.os.SystemClock
 import android.util.Log
 import android.util.Pair
 import androidx.annotation.WorkerThread
@@ -24,9 +23,7 @@ import java.io.*
 import java.nio.FloatBuffer
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.system.measureTimeMillis
 import kotlin.time.ExperimentalTime
-import kotlin.time.measureTimedValue
 
 
 class EmotionPyTorchVideoClassifier(context: Context) {
@@ -56,6 +53,8 @@ class EmotionPyTorchVideoClassifier(context: Context) {
 
     private var labels: ArrayList<String>? = null
     private var module: Module? = null
+    private val length = 1280
+
     private fun loadLabels(context: Context) {
         val br: BufferedReader?
         labels = ArrayList()
@@ -71,43 +70,37 @@ class EmotionPyTorchVideoClassifier(context: Context) {
         }
     }
 
-    fun recognizeImage(bitmap: Bitmap): String {
-        val res = classifyImage(bitmap)
-        val scores = res.second.toList()
-        val descriptor = scores + scores + scores + scores
-        val index = MainActivity.clf?.predict(descriptor)
-        Log.e(TAG, labels!![index!!].toString())
-        return labels!![index]
-    }
-
     @ExperimentalTime
     fun recognizeVideo(fromMs: Int,
                        toMs: Int,
                        mmr: MediaMetadataRetriever): String {
-        val length = 1280
         val res = classifyVideo(fromMs, toMs, mmr).second
         if (res != null) {
-            val scores = mutableListOf<Float>()
-            for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE){
-                if ((i+1)*length <= res.size) {
-                    scores.addAll(res.sliceArray(length*i until length*(i+1)).toList())
-                }
-            }
-            val features = mk.ndarray(mk[scores])
-            val min = minD2(features, axis = 0).toList()
-            val max = maxD2(features, axis = 0).toList()
-            val mean: List<Float> = meanD2(features, axis = 0).toList().map { it.toFloat() }
-            val std = mutableListOf<Float>()
-            val rows = features.shape[0]
-            for (i in 0 until length) {
-                std.add(calculateSD(features[0.r..rows, i].toList()))
-            }
-            val descriptor = mean + std + min + max
-            val index = MainActivity.clf?.predict(descriptor)
-            Log.e(MainActivity.TAG, index.toString())
-            return labels!![index!!]
+            return classifyFeatures(res)
         }
         return ""
+    }
+
+    private fun classifyFeatures(res: FloatArray): String {
+        val scores = mutableListOf<Float>()
+        for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE){
+            if ((i+1)*length <= res.size) {
+                scores.addAll(res.sliceArray(length*i until length*(i+1)).toList())
+            }
+        }
+        val features = mk.ndarray(mk[scores])
+        val min = minD2(features, axis = 0).toList()
+        val max = maxD2(features, axis = 0).toList()
+        val mean: List<Float> = meanD2(features, axis = 0).toList().map { it.toFloat() }
+        val std = mutableListOf<Float>()
+        val rows = features.shape[0]
+        for (i in 0 until length) {
+            std.add(calculateSD(features[0.r..rows, i].toList()))
+        }
+        val descriptor = mean + std + min + max
+        val index = MainActivity.clf?.predict(descriptor)
+        Log.e(MainActivity.TAG, index.toString())
+        return labels!![index!!]
     }
 
     private fun calculateSD(numArray: List<Float>): Float {
@@ -126,33 +119,14 @@ class EmotionPyTorchVideoClassifier(context: Context) {
 
     @ExperimentalTime
     fun recognizeLiveVideo(inTensorBuffer: FloatBuffer): String {
-        val length = 1280
-        val res = classifyLive(inTensorBuffer).second
+        val res = getFeatures(inTensorBuffer).second
         if (res != null) {
-            val scores = mutableListOf<Float>()
-            for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE){
-                if ((i+1)*length <= res.size) {
-                    scores.addAll(res.sliceArray(length*i until length*(i+1)).toList())
-                }
-            }
-            val features = mk.ndarray(mk[scores])
-            val min = minD2(features, axis = 0).toList()
-            val max = maxD2(features, axis = 0).toList()
-            val mean: List<Float> = meanD2(features, axis = 0).toList().map { it.toFloat() }
-            val std = mutableListOf<Float>()
-            val rows = features.shape[0]
-            for (i in 0 until length) {
-                std.add(calculateSD(features[0.r..rows, i].toList()))
-            }
-            val descriptor = mean + std + min + max
-            val index = MainActivity.clf?.predict(descriptor)
-            Log.e(MainActivity.TAG, index.toString())
-            return labels!![index!!]
+            return classifyFeatures(res)
         }
         return ""
     }
 
-    private fun classifyLive(inTensorBuffer: FloatBuffer): Pair<Long, FloatArray> {
+    private fun getFeatures(inTensorBuffer: FloatBuffer): Pair<Long, FloatArray> {
         val inputTensor = Tensor.fromBlob(
             inTensorBuffer, longArrayOf(
                 Constants.COUNT_OF_FRAMES_PER_INFERENCE.toLong(),
@@ -231,21 +205,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                     (i * Constants.MODEL_INPUT_SIZE))
             }
 
-            val inputTensor = Tensor.fromBlob(
-                inTensorBuffer, longArrayOf(
-                    numFrames.toLong(),
-                    3, //channels
-                    Constants.TARGET_FACE_SIZE.toLong(), Constants.TARGET_FACE_SIZE.toLong()
-                )
-            )
-            val start = System.nanoTime()
-            val outputTensor: Tensor = module!!.forward(IValue.from(inputTensor)).toTensor()
-            val elapsed = (System.nanoTime() - start)/10000000
-
-            val scores = outputTensor.dataAsFloatArray
-            Log.d(TAG, outputTensor.shape()[0].toString())
-            Log.d(TAG, outputTensor.shape()[1].toString())
-            return Pair(elapsed, scores)
+            return getFeatures(inTensorBuffer)
         }
         return Pair(0, null)
     }

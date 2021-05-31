@@ -18,7 +18,7 @@ import java.util.*
 class MainActivity : AppCompatActivity() {
     companion object {
         var content: Uri? = null
-        val TAG = "MainActivity"
+        const val TAG = "MainActivity"
         var mtcnnFaceDetector: MTCNNModel? = null
         var videoDetector: EmotionPyTorchVideoClassifier? = null
         var clf: LinearSVC? = null
@@ -41,40 +41,6 @@ class MainActivity : AppCompatActivity() {
         }
         else
             init()
-    }
-
-    fun nextStep(view: View) {
-        selectImageInAlbum()
-    }
-
-    private fun selectImageInAlbum() {
-        val intent = Intent()
-        intent.type = "image/* video/*"
-        intent.action = Intent.ACTION_PICK
-        startActivityForResult(intent, REQUEST_ACCESS_TYPE)
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (resultCode == RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
-            content = data?.data
-            Log.d(TAG, "uri $content")
-            val intentNextStep = Intent(this, SecondActivity::class.java)
-            startActivity(intentNextStep)
-        }
-    }
-
-    private fun allPermissionsGranted(): Boolean {
-        for (permission in getRequiredPermissions()!!) {
-            val status = permission?.let { ContextCompat.checkSelfPermission(this, it) }
-            if (permission?.let { ContextCompat.checkSelfPermission(this, it) }
-                != PackageManager.PERMISSION_GRANTED
-            ) {
-                return false
-
-            }
-        }
-        return true
     }
 
     private fun getRequiredPermissions(): Array<String?>? {
@@ -107,7 +73,7 @@ class MainActivity : AppCompatActivity() {
                     if (grantResults[i] != PackageManager.PERMISSION_GRANTED) allGranted = false
                     i++
                 }
-                // Check for ACCESS_FINE_LOCATION
+
                 if (allGranted) {
                     // All Permissions Granted
                     init()
@@ -126,9 +92,22 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun allPermissionsGranted(): Boolean {
+        for (permission in getRequiredPermissions()!!) {
+            permission?.let { ContextCompat.checkSelfPermission(this, it) }
+            if (permission?.let { ContextCompat.checkSelfPermission(this, it) }
+                != PackageManager.PERMISSION_GRANTED
+            ) {
+                return false
+
+            }
+        }
+        return true
+    }
+
     private fun init() {
         try {
-            mtcnnFaceDetector = MTCNNModel.Companion.create(assets)
+            mtcnnFaceDetector = MTCNNModel.create(assets)
         } catch (e: Exception) {
             Log.d(TAG, "Exception initializing MTCNNModel!${e.stackTraceToString()}")
         }
@@ -146,8 +125,29 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    fun nextStep(view: View) {
+        selectImageInAlbum()
+    }
+
+    private fun selectImageInAlbum() {
+        val intent = Intent()
+        intent.type = "video/*"
+        intent.action = Intent.ACTION_PICK
+        startActivityForResult(intent, REQUEST_ACCESS_TYPE)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (resultCode == RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
+            content = data?.data
+            Log.d(TAG, "uri $content")
+            val intentNextStep = Intent(this, SecondActivity::class.java)
+            startActivity(intentNextStep)
+        }
+    }
+
     fun startLive(view: View) {
-        val intent = Intent(this@MainActivity, LiveVideoClassificationActivity::class.java)
+        val intent = Intent(this@MainActivity, LiveVideoActivity::class.java)
         startActivity(intent)
     }
 }
