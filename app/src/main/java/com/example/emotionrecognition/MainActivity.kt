@@ -157,7 +157,7 @@ class MainActivity : AppCompatActivity() {
         if (resultCode == RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
             content = data?.data
             Log.d(TAG, "uri $content")
-            val intentNextStep = Intent(this, SecondActivity::class.java)
+            val intentNextStep = Intent(this, GalleryActivity::class.java)
             startActivity(intentNextStep)
         }
     }

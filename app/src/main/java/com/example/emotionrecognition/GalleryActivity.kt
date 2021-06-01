@@ -20,7 +20,7 @@ import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
 
 
-class SecondActivity : Runnable, AppCompatActivity() {
+class GalleryActivity : Runnable, AppCompatActivity() {
     private var mThread: Thread? = Thread(this)
     private var mStopThread = true
 
