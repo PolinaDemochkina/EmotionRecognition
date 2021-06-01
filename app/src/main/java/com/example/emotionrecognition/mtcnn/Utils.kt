@@ -13,13 +13,13 @@ object Utils {
 
     fun expand(src: FloatArray, dst: Array<Array<FloatArray>>) {
         var idx = 0
-        for (y in dst.indices) for (x in 0 until dst[0].size) for (c in 0 until dst[0][0].size) dst[y][x][c] =
+        for (y in dst.indices) for (element in dst[0]) for (c in dst[0][0].indices) element[c] =
             src[idx++]
     }
 
     fun expandProb(src: FloatArray, dst: Array<FloatArray>) {
         var idx = 0
-        for (y in dst.indices) for (x in 0 until dst[0].size) dst[y][x] = src[idx++ * 2 + 1]
+        for (y in dst.indices) for (x in dst[0].indices) dst[y][x] = src[idx++ * 2 + 1]
     }
 
     fun updateBoxes(boxes: Vector<Box>): Vector<Box> {

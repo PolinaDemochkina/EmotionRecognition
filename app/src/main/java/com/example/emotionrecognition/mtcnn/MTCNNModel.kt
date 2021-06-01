@@ -301,7 +301,7 @@ class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)
         //square
         for (i in boxes.indices) {
             boxes[i].toSquareShape()
-            boxes[i].limit_square(w, h)
+            boxes[i].limitSquare(w, h)
         }
     }
 

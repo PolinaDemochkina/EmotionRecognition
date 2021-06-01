@@ -1,15 +1,9 @@
 package com.example.emotionrecognition
 
-import android.graphics.Bitmap
-import android.graphics.Canvas
-import android.graphics.Color
-import android.graphics.Paint
 import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
-import android.widget.ImageView
-import androidx.annotation.UiThread
 import androidx.appcompat.app.AppCompatActivity
 
 

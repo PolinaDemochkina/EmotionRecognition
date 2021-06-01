@@ -2,16 +2,13 @@ package com.example.emotionrecognition
 
 import android.annotation.SuppressLint
 import android.content.ContentResolver
-import android.graphics.*
 import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
-import android.widget.ImageView
 import androidx.annotation.RequiresApi
-import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
 import com.example.emotionrecognition.LiveVideoActivity.Companion.applyToUiAnalyzeImageResult

@@ -75,7 +75,7 @@ class Box internal constructor() {
         }
     }
 
-    fun limit_square(w: Int, h: Int) {
+    fun limitSquare(w: Int, h: Int) {
         if (box[0] < 0 || box[1] < 0) {
             val len = Math.max(-box[0], -box[1])
             box[0] += len

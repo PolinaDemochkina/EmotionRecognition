@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.Rect
 import android.media.MediaMetadataRetriever
 import android.util.Log
-import android.util.Pair
 import androidx.annotation.WorkerThread
 import com.example.emotionrecognition.mtcnn.Box
 import org.jetbrains.kotlinx.multik.api.mk
@@ -109,9 +108,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
     @ExperimentalTime
     fun recognizeLiveVideo(inTensorBuffer: FloatBuffer): String {
         val res = getFeatures(inTensorBuffer)
-        if (res != null) {
-            return classifyFeatures(res)
-        }
+        return classifyFeatures(res)
         return ""
     }
 
