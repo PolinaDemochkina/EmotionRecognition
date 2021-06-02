@@ -11,7 +11,10 @@ import android.util.Log
 import android.util.Size
 import android.view.TextureView
 import android.view.View
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.widget.ImageView
+import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
@@ -19,6 +22,7 @@ import androidx.camera.core.*
 import androidx.camera.core.Preview.OnPreviewOutputUpdateListener
 import androidx.camera.core.Preview.PreviewOutput
 import androidx.core.app.ActivityCompat
+import com.example.emotionrecognition.EmotionPyTorchVideoClassifier.Companion.applyToUiAnalyzeImageResult
 import com.example.emotionrecognition.mtcnn.Box
 import org.pytorch.Tensor
 import org.pytorch.torchvision.TensorImageUtils
@@ -28,40 +32,11 @@ import java.util.*
 import kotlin.time.ExperimentalTime
 
 class  LiveVideoActivity : BaseModuleActivity() {
-    companion object {
-        @UiThread
-        fun applyToUiAnalyzeImageResult(result: AnalysisResult?, width: Int, height: Int, mOverlayView: ImageView) {
-            val emotion = result!!.mResults
-            val tempBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val c = Canvas(tempBmp)
-            val p = Paint()
-            p.style = Paint.Style.STROKE
-            p.isAntiAlias = true
-            p.isFilterBitmap = true
-            p.isDither = true
-            p.color = Color.parseColor("#9FFFCB")
-            p.strokeWidth = 6f
-            val p_text = Paint()
-            p_text.color = Color.WHITE
-            p_text.style = Paint.Style.FILL
-            p_text.color = Color.parseColor("#9FFFCB")
-            p_text.textSize = 28f
-            val bbox = result.box
-            p.color = Color.parseColor("#9FFFCB")
-            c.drawRect(bbox, p)
-            c.drawText(emotion, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
-
-            mOverlayView.setImageBitmap(tempBmp)
-        }
-    }
-
     private val REQUEST_CODE_CAMERA_PERMISSION = 200
     private val PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     private var mLastAnalysisResultTime: Long = 0
     private var mFrameCount = 0
     private var inTensorBuffer: FloatBuffer? = null
-
-    class AnalysisResult(val box: Rect, val mResults: String, val width: Int, val height: Int)
 
     private fun getContentViewLayoutId(): Int {
         return R.layout.activity_live_video_classification
@@ -137,6 +112,9 @@ class  LiveVideoActivity : BaseModuleActivity() {
                     runOnUiThread {
                         val overlay: ImageView = findViewById(com.example.emotionrecognition.R.id.overlay)
                         overlay.setImageResource(android.R.color.transparent)
+                        val text: TextView = findViewById(R.id.liveText)
+                        text.visibility = VISIBLE
+                        text.text = "NO FACES DETECTED"
                     }
                 }
                 val height = size!!.height
@@ -144,7 +122,10 @@ class  LiveVideoActivity : BaseModuleActivity() {
                 val result = analyzeImage(image, height, width)
                 if (result != null) {
                     mLastAnalysisResultTime = SystemClock.elapsedRealtime()
-                    runOnUiThread { applyToUiAnalyzeImageResult(result, height, width, findViewById(R.id.overlay))}
+                    runOnUiThread {
+                        val text: TextView = findViewById(R.id.liveText)
+                        text.visibility = GONE
+                        applyToUiAnalyzeImageResult(result, height, width, findViewById(R.id.overlay))}
                 }
             }
 
@@ -154,7 +135,7 @@ class  LiveVideoActivity : BaseModuleActivity() {
 
     @ExperimentalTime
     @WorkerThread
-    fun analyzeImage(image: ImageProxy?, width: Int, height: Int): AnalysisResult? {
+    fun analyzeImage(image: ImageProxy?, width: Int, height: Int): EmotionPyTorchVideoClassifier.AnalysisResult? {
         if (mFrameCount == 0) inTensorBuffer =
             Tensor.allocateFloatBuffer(Constants.MODEL_INPUT_SIZE*Constants.COUNT_OF_FRAMES_PER_INFERENCE)
 
@@ -213,7 +194,7 @@ class  LiveVideoActivity : BaseModuleActivity() {
 
         val result = MainActivity.videoDetector!!.recognizeLiveVideo(inTensorBuffer!!)
 
-        return AnalysisResult(
+        return EmotionPyTorchVideoClassifier.AnalysisResult(
             Rect(
                 width - (width * bbox!!.left / resizedBitmap.width),
                 height * bbox.top / resizedBitmap.height,

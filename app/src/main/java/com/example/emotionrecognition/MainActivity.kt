@@ -141,25 +141,20 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    fun nextStep(view: View) {
-        selectImageInAlbum()
-    }
-
-    private fun selectImageInAlbum() {
-        val intent = Intent()
-        intent.type = "video/*"
-        intent.action = Intent.ACTION_PICK
-        startActivityForResult(intent, REQUEST_ACCESS_TYPE)
-    }
-
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == RESULT_OK && requestCode == REQUEST_ACCESS_TYPE) {
             content = data?.data
-            Log.d(TAG, "uri $content")
             val intentNextStep = Intent(this, GalleryActivity::class.java)
             startActivity(intentNextStep)
         }
+    }
+
+    fun startGallery(view: View) {
+        val intent = Intent()
+        intent.type = "video/*"
+        intent.action = Intent.ACTION_PICK
+        startActivityForResult(intent, REQUEST_ACCESS_TYPE)
     }
 
     fun startLive(view: View) {

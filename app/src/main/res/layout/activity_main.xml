@@ -25,7 +25,7 @@
         android:layout_marginStart="32dp"
         android:layout_marginBottom="32dp"
         android:background="@drawable/button_style"
-        android:onClick="nextStep"
+        android:onClick="startGallery"
         android:paddingTop="2dp"
         android:text="@string/gallery"
         android:textColor="#141432"

@@ -1,10 +1,11 @@
 package com.example.emotionrecognition
 
 import android.content.Context
-import android.graphics.Bitmap
-import android.graphics.Rect
+import android.graphics.*
 import android.media.MediaMetadataRetriever
 import android.util.Log
+import android.widget.ImageView
+import androidx.annotation.UiThread
 import androidx.annotation.WorkerThread
 import com.example.emotionrecognition.mtcnn.Box
 import org.jetbrains.kotlinx.multik.api.mk
@@ -27,7 +28,6 @@ import kotlin.time.ExperimentalTime
 
 class EmotionPyTorchVideoClassifier(context: Context) {
     companion object {
-        /** Tag for the [Log].  */
         private const val TAG = "Video detection"
         private const val MODEL_FILE = "mobile_efficientNet.pt"
         @Throws(IOException::class)
@@ -48,11 +48,38 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                 return file.absolutePath
             }
         }
+
+        @UiThread
+        fun applyToUiAnalyzeImageResult(result: AnalysisResult?, width: Int, height: Int, mOverlayView: ImageView) {
+            val emotion = result!!.mResults
+            val tempBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            val c = Canvas(tempBmp)
+            val p = Paint()
+            p.style = Paint.Style.STROKE
+            p.isAntiAlias = true
+            p.isFilterBitmap = true
+            p.isDither = true
+            p.color = Color.parseColor("#9FFFCB")
+            p.strokeWidth = 6f
+            val p_text = Paint()
+            p_text.color = Color.WHITE
+            p_text.style = Paint.Style.FILL
+            p_text.color = Color.parseColor("#9FFFCB")
+            p_text.textSize = 28f
+            val bbox = result.box
+            p.color = Color.parseColor("#9FFFCB")
+            c.drawRect(bbox, p)
+            c.drawText(emotion, bbox.left.toFloat(), Math.max(0, bbox.top - 20).toFloat(), p_text)
+
+            mOverlayView.setImageBitmap(tempBmp)
+        }
     }
 
     private var labels: ArrayList<String>? = null
     private var module: Module? = null
     private val length = 1280
+
+    class AnalysisResult(val box: Rect, val mResults: String, val width: Int, val height: Int)
 
     private fun loadLabels(context: Context) {
         val br: BufferedReader?
@@ -107,15 +134,15 @@ class EmotionPyTorchVideoClassifier(context: Context) {
 
     @ExperimentalTime
     fun recognizeLiveVideo(inTensorBuffer: FloatBuffer): String {
-        val res = getFeatures(inTensorBuffer)
+        val res = getFeatures(inTensorBuffer, Constants.COUNT_OF_FRAMES_PER_INFERENCE)
         return classifyFeatures(res)
         return ""
     }
 
-    private fun getFeatures(inTensorBuffer: FloatBuffer): FloatArray {
+    private fun getFeatures(inTensorBuffer: FloatBuffer, numFrames: Int): FloatArray {
         val inputTensor = Tensor.fromBlob(
             inTensorBuffer, longArrayOf(
-                Constants.COUNT_OF_FRAMES_PER_INFERENCE.toLong(),
+                numFrames.toLong(),
                 3, //channels
                 Constants.TARGET_FACE_SIZE.toLong(), Constants.TARGET_FACE_SIZE.toLong()
             )
@@ -133,12 +160,13 @@ class EmotionPyTorchVideoClassifier(context: Context) {
     @WorkerThread
     fun recognizeVideo(fromMs: Int,
                        toMs: Int,
-                       mmr: MediaMetadataRetriever ): LiveVideoActivity.AnalysisResult? {
+                       mmr: MediaMetadataRetriever): AnalysisResult? {
         var numFrames = 0
         var faces : MutableList<Bitmap> = mutableListOf()
         var bitmap: Bitmap? = null
         var resizedBitmap: Bitmap? = null
-        var bbox: Rect? = null
+        var bbox: Rect?
+        var lastBbox: Rect? = null
 
         for (i in 0 until Constants.COUNT_OF_FRAMES_PER_INFERENCE) {
             val timeUs = (1000 * (fromMs + ((toMs - fromMs) * i /
@@ -172,6 +200,7 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                     bboxOrig.height()),
                     Constants.TARGET_FACE_SIZE, Constants.TARGET_FACE_SIZE, false))
 
+                lastBbox = bbox
                 numFrames += 1
             }
         }
@@ -192,15 +221,15 @@ class EmotionPyTorchVideoClassifier(context: Context) {
                     (i * Constants.MODEL_INPUT_SIZE))
             }
 
-            val features = getFeatures(inTensorBuffer)
+            val features = getFeatures(inTensorBuffer, numFrames)
             val emotion = classifyFeatures(features)
 
-            return LiveVideoActivity.AnalysisResult(
+            return AnalysisResult(
                 Rect(
-                    (bitmap!!.width * bbox!!.left / resizedBitmap!!.width),
-                    bitmap.height * bbox.top / resizedBitmap.height,
-                    (bitmap.width * bbox.right / resizedBitmap.width),
-                    bitmap.height * bbox.bottom / resizedBitmap.height
+                    (bitmap!!.width * lastBbox!!.left / resizedBitmap!!.width),
+                    bitmap.height * lastBbox.top / resizedBitmap.height,
+                    (bitmap.width * lastBbox.right / resizedBitmap.width),
+                    bitmap.height * lastBbox.bottom / resizedBitmap.height
                 ), emotion, bitmap.width, bitmap.height
             )
         }

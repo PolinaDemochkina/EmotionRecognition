@@ -6,12 +6,15 @@ import android.media.MediaMetadataRetriever
 import android.media.MediaPlayer
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
 import android.util.Log
 import android.view.View
+import android.widget.ImageView
+import android.widget.TextView
 import androidx.annotation.RequiresApi
 import androidx.annotation.WorkerThread
 import androidx.appcompat.app.AppCompatActivity
-import com.example.emotionrecognition.LiveVideoActivity.Companion.applyToUiAnalyzeImageResult
+import com.example.emotionrecognition.EmotionPyTorchVideoClassifier.Companion.applyToUiAnalyzeImageResult
 import kotlinx.android.synthetic.main.activity_second.*
 import kotlin.math.ceil
 import kotlin.time.ExperimentalTime
@@ -20,6 +23,7 @@ import kotlin.time.ExperimentalTime
 class GalleryActivity : Runnable, AppCompatActivity() {
     private var mThread: Thread? = Thread(this)
     private var mStopThread = true
+    private var mLastAnalysisResultTime: Long = 0
 
     @SuppressLint("WrongThread")
     @RequiresApi(Build.VERSION_CODES.N)
@@ -79,7 +83,7 @@ class GalleryActivity : Runnable, AppCompatActivity() {
             val result = MainActivity.videoDetector!!.recognizeVideo(from, to, mmr)
             val elapsed = (System.nanoTime() - start)/10000000
             Log.e(MainActivity.TAG, String.format("Timecost to run PyTorch model inference: $elapsed"))
-            Log.e(MainActivity.TAG, result!!.mResults)
+//            Log.e(MainActivity.TAG, result!!.mResults)
 
             from += elapsed.toInt()
 
@@ -99,8 +103,23 @@ class GalleryActivity : Runnable, AppCompatActivity() {
                 }
             }
 
-            runOnUiThread {
-                applyToUiAnalyzeImageResult(result, result.width, result.height, findViewById(R.id.gallery_overlay))
+            if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime > 250) {
+                runOnUiThread {
+                    val overlay: ImageView = findViewById(R.id.gallery_overlay)
+                    overlay.setImageResource(android.R.color.transparent)
+                    val text: TextView = findViewById(R.id.galleryText)
+                    text.visibility = View.VISIBLE
+                    text.text = "NO FACES DETECTED"
+                }
+            }
+
+            if (result != null){
+                runOnUiThread {
+                    mLastAnalysisResultTime = SystemClock.elapsedRealtime()
+                    val text: TextView = findViewById(R.id.galleryText)
+                    text.visibility = View.GONE
+                    applyToUiAnalyzeImageResult(result, result!!.width, result.height, findViewById(R.id.gallery_overlay))
+                }
             }
         }
         mmr.release()
