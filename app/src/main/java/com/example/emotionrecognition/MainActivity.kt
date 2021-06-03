@@ -11,7 +11,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
-import com.example.emotionrecognition.mtcnn.MTCNNModel
+import com.example.emotionrecognition.mtcnn.FaceDetector
 import kotlinx.android.synthetic.main.activity_second.*
 import java.util.*
 
@@ -20,7 +20,7 @@ class MainActivity : AppCompatActivity() {
     companion object {
         var content: Uri? = null
         const val TAG = "MainActivity"
-        var mtcnnFaceDetector: MTCNNModel? = null
+        var mtcnnFaceDetector: FaceDetector? = null
         var videoDetector: EmotionPyTorchVideoClassifier? = null
         var clf: LinearSVC? = null
 
@@ -123,7 +123,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun init() {
         try {
-            mtcnnFaceDetector = MTCNNModel.create(assets)
+            mtcnnFaceDetector = FaceDetector.create(assets)
         } catch (e: Exception) {
             Log.d(TAG, "Exception initializing MTCNNModel!${e.stackTraceToString()}")
         }

@@ -10,10 +10,10 @@ import kotlin.math.max
 import kotlin.math.min
 
 
-class MTCNNModel(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)  {
+class FaceDetector(val tensorFlowInferenceInterface: TensorFlowInferenceInterface)  {
     companion object {
-        fun create (assetManager : AssetManager) : MTCNNModel {
-            return MTCNNModel(TensorFlowInferenceInterface(assetManager, "file:///android_asset/mtcnn_model.pb"))
+        fun create (assetManager : AssetManager) : FaceDetector {
+            return FaceDetector(TensorFlowInferenceInterface(assetManager, "file:///android_asset/mtcnn_model.pb"))
         }
     }
 
