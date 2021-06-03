@@ -103,7 +103,7 @@ class GalleryActivity : Runnable, AppCompatActivity() {
                 }
             }
 
-            if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime > 250) {
+            if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime > 500) {
                 runOnUiThread {
                     val overlay: ImageView = findViewById(R.id.gallery_overlay)
                     overlay.setImageResource(android.R.color.transparent)

@@ -108,7 +108,7 @@ class  CameraActivity : BaseModuleActivity() {
         val imageAnalysis = ImageAnalysis(imageAnalysisConfig)
         imageAnalysis.analyzer =
             ImageAnalysis.Analyzer { image: ImageProxy?, rotationDegrees: Int ->
-                if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime > 250) {
+                if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime > 500) {
                     runOnUiThread {
                         val overlay: ImageView = findViewById(com.example.emotionrecognition.R.id.overlay)
                         overlay.setImageResource(android.R.color.transparent)
