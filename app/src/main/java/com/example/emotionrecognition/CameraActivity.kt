@@ -31,7 +31,7 @@ import java.nio.FloatBuffer
 import java.util.*
 import kotlin.time.ExperimentalTime
 
-class  LiveVideoActivity : BaseModuleActivity() {
+class  CameraActivity : BaseModuleActivity() {
     private val REQUEST_CODE_CAMERA_PERMISSION = 200
     private val PERMISSIONS = arrayOf(Manifest.permission.CAMERA)
     private var mLastAnalysisResultTime: Long = 0

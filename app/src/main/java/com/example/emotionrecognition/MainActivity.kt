@@ -158,7 +158,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun startLive(view: View) {
-        val intent = Intent(this@MainActivity, LiveVideoActivity::class.java)
+        val intent = Intent(this@MainActivity, CameraActivity::class.java)
         startActivity(intent)
     }
 }

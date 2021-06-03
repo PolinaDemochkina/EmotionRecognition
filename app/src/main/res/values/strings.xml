@@ -1,8 +1,8 @@
 <resources>
     <string name="app_name">Emotion recognition</string>
     <string name="gallery">Gallery</string>
-    <string name="live">Live</string>
+    <string name="live">Camera</string>
     <string name="emotion_recognition">Emotion recognition</string>
-    <string name="instruction">Choose a video from your gallery or start a live video and the neural network will recognize the emotions.</string>
-    <string name="back">back</string>
+    <string name="instruction">Choose a video from your gallery or start a live video using your camera and the neural network will recognize the emotions.</string>
+    <string name="back">Back</string>
 </resources>
