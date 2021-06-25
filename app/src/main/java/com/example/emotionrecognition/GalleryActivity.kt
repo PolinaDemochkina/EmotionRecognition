@@ -9,6 +9,7 @@ import android.os.Bundle
 import android.os.SystemClock
 import android.util.Log
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.annotation.RequiresApi
@@ -34,6 +35,16 @@ class GalleryActivity : Runnable, AppCompatActivity() {
         val cR: ContentResolver = this.applicationContext.contentResolver
         val type = cR.getType(MainActivity.content!!)
         if (type == "video/mp4") {
+            val mp = MediaPlayer()
+            mp.setDataSource(applicationContext, MainActivity.content!!)
+            mp.prepare()
+            val width = mp.videoWidth
+            val height = mp.videoHeight
+            if (width > height) {
+                val layoutParams = video.layoutParams
+                layoutParams.height = FrameLayout.LayoutParams.WRAP_CONTENT
+                layoutParams.width = FrameLayout.LayoutParams.WRAP_CONTENT
+            }
             video.visibility = View.VISIBLE
             startVideo()
         }
